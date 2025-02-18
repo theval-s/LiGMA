@@ -1,0 +1,8 @@
+build/*
+.cache
+test_files/*
+.vscode
+.tmp*
+.idea
+.git/*
+CMakeLists.txt.user
