@@ -1,0 +1,25 @@
+---
+BasedOnStyle: LLVM
+Language: Cpp
+IndentWidth: 4
+---
+AlignArrayOfStructures: Right
+AlignConsecutiveMacros:
+  Enabled: true
+AllowShortCaseExpressionOnASingleLine: true
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+AlignEscapedNewlines: LeftWithLastLine
+AlignOperands: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AlwaysBreakBeforeMultilineStrings: false
+BinPackArguments: true
+BinPackParameters: OnePerLine
+BreakBeforeBraces: Attach
+BreakBeforeTernaryOperators: true
+CompactNamespaces: true
+IncludeBlocks: Regroup
+
