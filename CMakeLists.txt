@@ -14,16 +14,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 set(MAIN_SOURCES
-    src/main.cpp
-    src/instance_filesystem.cpp
-    src/config.cpp
-    src/plugin_handler.cpp
+        src/main.cpp
+        src/instance_filesystem.cpp
+        src/config.cpp
+        src/plugin_handler.cpp
+        src/overlayfs_mount.cpp
 )
 
 set(MAIN_UI_SOURCES
-    src/qt_ui/mainwindow.cpp
-    src/qt_ui/new_instance_dialog.cpp
-    src/qt_ui/game_instance.cpp
+        src/qt_ui/mainwindow.cpp
+        src/qt_ui/new_instance_dialog.cpp
+        src/qt_ui/game_instance.cpp
 )
 
 add_executable(main ${MAIN_SOURCES} ${MAIN_UI_SOURCES})

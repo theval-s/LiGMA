@@ -9,21 +9,21 @@ namespace LigmaCore {
 namespace fs = std::filesystem;
 
 class ConfigManager {
-public:
-    //probably I should make all members static and just save by path, yeah?...
-    //sounds like a better design
-    static void saveInstance(const fs::path &configPath, const QJsonObject &config);
+  public:
+    // probably I should make all members static and just save by path, yeah?...
+    // sounds like a better design
+    static void saveInstance(const fs::path &configPath,
+                             const QJsonObject &config);
     static QJsonObject loadInstance(const fs::path &);
     static fs::path getConfigPath();
     static bool isCorrect(QJsonObject config);
     static std::vector<std::string> getSavedInstanceNames();
-private:
 
+  private:
 };
 } // namespace LigmaCore
 
 // use cbor or json?
-
 
 /* JSON
  * {
