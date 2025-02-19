@@ -1,11 +1,11 @@
-//#include <archive.h>?
+// #include <archive.h>?
 
-//namespace LigmaCore{
+// namespace LigmaCore{
 
-class LigmaExtractor{
-    public:
+class LigmaExtractor {
+  public:
     void extract();
-    //Class for archive extraction
+    // Class for archive extraction
 };
 
 //} //namespace ligma

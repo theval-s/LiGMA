@@ -5,9 +5,9 @@ Work In Progress
 
 # Dependancies
 
-CMake
-Qt6 Core, Qt6 Widgets
-fuse-overlayfs
+CMake  
+Qt6 Core, Qt6 Widgets  (qt6-base or qt6-base-devel?)
+fuse-overlayfs (and fuse3)
 
 # Building
 ```
@@ -81,3 +81,5 @@ Every instance has 5 folders:
 I decided to use QtPlugins in core and also QtJson handling, so now there are a lot of conversions between std::string and QString
  and that's probably a big issue that would need some rewriting
 - I probably need to study proper OOP practices and make interfaces for classes? solid and etc  
+- Plugin specific issues:
+  - Stardew: looks like XNA games are absolutely incompatible with overlayfs on Linux, and SMAPI is incompatible too.
