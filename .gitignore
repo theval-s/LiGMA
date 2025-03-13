@@ -5,4 +5,6 @@ test_files/*
 .tmp*
 .idea
 .git/*
+docs/*
+latex/*
 CMakeLists.txt.user

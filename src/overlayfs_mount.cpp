@@ -14,7 +14,14 @@ namespace LigmaCore {
 void FuseOverlayFSMount::mount(const fs::path &mountPath,
                                const std::string &lowerDirs,
                                const std::string &upperDir,
-                               const std::string &workdir) {
+                               const std::string &workDir) {
+    mount(mountPath, QString::fromStdString(lowerDirs),
+          QString::fromStdString(upperDir), QString::fromStdString(workDir));
+}
+void FuseOverlayFSMount::mount(const fs::path &mountPath,
+                               const QString &lowerDirs,
+                               const QString &upperDir,
+                               const QString &workdir) {
     // TODO: check if dirs exist, error handling, etc etc
     //       maybe use absolute paths instead of setting working directory
 
@@ -22,7 +29,7 @@ void FuseOverlayFSMount::mount(const fs::path &mountPath,
     // still can be done with system() though I think
 
     // there might be some issues if paths are absolute/are not absolute
-    // since i assume mountPath&lowerDirs are absolute but upperDir & workDir
+    // since I assume mountPath&lowerDirs are absolute but upperDir & workDir
     // are not
     QProcess process;
     process.setWorkingDirectory(
@@ -30,12 +37,9 @@ void FuseOverlayFSMount::mount(const fs::path &mountPath,
     process.setProcessChannelMode(
         QProcess::ForwardedChannels); // forwards stdout
     QStringList arguments;
-    arguments << "-o"
-              << QString("lowerdir=%1").arg(QString::fromStdString(lowerDirs))
-              << "-o"
-              << QString("upperdir=%1").arg(QString::fromStdString(upperDir))
-              << "-o"
-              << QString("workdir=%1").arg(QString::fromStdString(workdir))
+    arguments << "-o" << QString("lowerdir=%1").arg(lowerDirs) << "-o"
+              << QString("upperdir=%1").arg(upperDir) << "-o"
+              << QString("workdir=%1").arg(workdir)
               << QString::fromStdString(mountPath);
     // process.setArguments(arguments);
 

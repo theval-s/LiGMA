@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QFile>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <filesystem>
 #include <string>
@@ -14,17 +16,24 @@ class ConfigManager {
     // sounds like a better design
     static void saveInstance(const fs::path &configPath,
                              const QJsonObject &config);
+    static void saveInstance(const QString &configPath,
+                             const QJsonObject &config);
     static QJsonObject loadInstance(const fs::path &);
     static fs::path getConfigPath();
-    static bool isCorrect(QJsonObject config);
+    static QString getConfigPathQString();
+    static void CheckCorrectness(const QJsonObject &config);
+    static void CheckModListCorrectness(const QJsonArray &modList);
     static std::vector<std::string> getSavedInstanceNames();
 
   private:
+    static void saveInstance(QFile &file, const QJsonObject &config);
 };
 } // namespace LigmaCore
 
 // use cbor or json?
-
+//Proton usage is detected from plugin at runtime so saving it is not needed
+//BUT edge case where plugin changes?
+//probably should add checks inside a NativeInstanceFilesystem class if mod has type:prefix
 /* JSON
  * {
  *  "instanceName": string,
@@ -36,10 +45,12 @@ class ConfigManager {
  *          {
  *          "name": string
  *          "path": string
+ *          "enabled": bool
+ *          "type": int
  *          },
  *          {
  *          "name": string
- *          "path": string
+ *          ...
  *          },
  *      }
  *  }

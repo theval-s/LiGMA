@@ -1,13 +1,14 @@
 #include "mainwindow.hpp"
 
 #include "game_instance.hpp"
-#include "instance_filesystem.hpp"
+#include "i_instance_filesystem.hpp"
 #include "new_instance_dialog.hpp"
 #include "plugin_handler.hpp"
 #include "ui_mainwindow.h"
 
 #include <QDialog>
 #include <QLabel>
+#include <QMessageBox>
 #include <QThread>
 #include <iostream>
 #include <qdebug.h>
@@ -16,7 +17,7 @@ void MainWindow::RefreshLists() {
     std::vector<LigmaCore::PluginInfo> info =
         LigmaCore::PluginHandler::getInstance().getPluginInfo();
     for (const auto &p : info) {
-        ui->pluginsList->addItem(QString::fromStdString(p.name));
+        ui->pluginsList->addItem(p.name);
     }
     for (const auto &s : LigmaCore::ConfigManager::getSavedInstanceNames()) {
         ui->instanceList->addItem(QString::fromStdString(s));
@@ -60,49 +61,75 @@ void MainWindow::instanceSelectionCheck(const QItemSelection &selected,
 }
 
 void MainWindow::on_createInstanceButton_clicked() {
-    if (const auto current_selected = ui->pluginsList->currentItem()) {
-        int plugin_index = ui->pluginsList->row(current_selected);
-        std::cerr << "I am in selected plugin with index " << plugin_index
-                  << std::endl;
-        std::vector<LigmaCore::PluginInfo> info =
-            LigmaCore::PluginHandler::getInstance().getPluginInfo();
-        // maybe i should store it?
-        NewInstanceDialog dialog(info[plugin_index], this);
-        dialog.setWindowTitle(QString::fromStdString(
-            std::format("Creating instance for: {}", info[plugin_index].name)));
-        if (dialog.exec() == QDialog::Accepted) {
-            std::cerr << "QDialog Accepted!\n";
-            qDebug() << "Instance name: " << dialog.getInstanceName()
-                     << "\nGame Path: " << dialog.getGamePath()
-                     << "\nInstance path: " << dialog.getInstancePath() << "\n";
-            // create game instance;
+    try {
+        if (const auto current_selected = ui->pluginsList->currentItem()) {
+            int plugin_index = ui->pluginsList->row(current_selected);
+            std::cerr << "I am in selected plugin with index " << plugin_index
+                      << std::endl;
+            std::vector<LigmaCore::PluginInfo> info =
+                LigmaCore::PluginHandler::getInstance().getPluginInfo();
+            // maybe i should store it?
+            NewInstanceDialog dialog(info[plugin_index], this);
+            dialog.setWindowTitle(QString::fromStdString(
+                std::format("Creating instance for: {}",
+                            info[plugin_index].name.toStdString())));
+            if (dialog.exec() == QDialog::Accepted) {
+                std::cerr << "QDialog Accepted!\n";
+                qDebug() << "Instance name: " << dialog.getInstanceName()
+                         << "\nGame Path: " << dialog.getGamePath()
+                         << "\nInstance path: " << dialog.getInstancePath()
+                         << "\n";
+                // create game instance;
 
-            GameInstance *instance = new GameInstance(
-                dialog.getInstanceName(), dialog.getInstancePath(),
-                dialog.getGamePath(),
-                LigmaCore::PluginHandler::getInstance().getPluginByUUID(
-                    info[plugin_index].uuid));
-            instance->setAttribute(Qt::WA_DeleteOnClose);
-            instance->setWindowTitle("Ligma Game Instance");
-            instance->show();
+                auto plug =
+                    LigmaCore::PluginHandler::getInstance().getPluginByUUID(
+                        info[plugin_index].uuid);
+                QMessageBox::information(this, "Information from plugin",
+                                         plug->initialMessage());
+                GameInstance *instance = new GameInstance(
+                    dialog.getInstanceName(), dialog.getInstancePath(),
+                    dialog.getGamePath(), std::move(plug));
+                instance->setAttribute(Qt::WA_DeleteOnClose);
+                instance->setWindowTitle("Ligma Game Instance");
+                instance->show();
 
-            // QObject().thread()->usleep(1000*1000*5);
-            this->close();
+                // QObject().thread()->usleep(1000*1000*5);
+                this->close();
+            }
         }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error", e.what());
     }
 }
 
 void MainWindow::on_openInstanceButton_clicked() {
     // error handling?
-    if (const auto current_selected = ui->instanceList->currentItem()) {
-        int plugin_index = ui->instanceList->row(current_selected);
-        std::filesystem::path conf_path =
-            LigmaCore::ConfigManager::getConfigPath() /
-            current_selected->text().toStdString();
-        const QJsonObject &conf =
-            (LigmaCore::ConfigManager::loadInstance(conf_path));
-        auto *instance = new GameInstance(conf, conf_path);
-        instance->show();
-        this->close();
+    try {
+        if (const auto current_selected = ui->instanceList->currentItem()) {
+            int plugin_index = ui->instanceList->row(current_selected);
+            std::filesystem::path conf_path =
+                LigmaCore::ConfigManager::getConfigPath() /
+                current_selected->text().toStdString();
+            const QJsonObject &conf =
+                (LigmaCore::ConfigManager::loadInstance(conf_path));
+            QString plug_uuid = conf["uuid"].toString();
+            if (plug_uuid.isEmpty()) {
+                QMessageBox::warning(
+                    this, "Error",
+                    "This configuration file does not have plugin uuid! Can't "
+                    "open instance with it!");
+                return;
+            }
+
+            auto *instance = new GameInstance(
+                conf, conf_path,
+                std::move(
+                    LigmaCore::PluginHandler::getInstance().getPluginByUUID(
+                        plug_uuid)));
+            instance->show();
+            this->close();
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error", e.what());
     }
 }

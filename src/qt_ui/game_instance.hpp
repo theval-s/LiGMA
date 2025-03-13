@@ -1,6 +1,6 @@
 #pragma once
 
-#include "instance_filesystem.hpp"
+#include "native_instance_filesystem.hpp"
 
 #include <QItemSelection>
 #include <QMainWindow>
@@ -17,16 +17,21 @@ class GameInstance : public QMainWindow {
   public:
     // 2 constructors - one from json and one from data
     // or leave 1 from InstanceManager?
-    explicit GameInstance(LigmaCore::InstanceFilesystem instance,
-                          QMainWindow *parent = nullptr);
+    explicit GameInstance(
+        std::unique_ptr<LigmaCore::IInstanceFilesystem> instance,
+        QMainWindow *parent = nullptr);
 
-    explicit GameInstance(const QJsonObject &config,
-                          const std::filesystem::path &configPath,
-                          QMainWindow *parent = nullptr);
+    explicit GameInstance(
+        const QJsonObject &config, const std::filesystem::path &configPath,
+        std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
+            gamePlugin,
+        QMainWindow *parent = nullptr);
 
-    explicit GameInstance(const QString &name, const QString &basePath,
-                          const QString &gamePath, LigmaPlugin *gamePlugin,
-                          QMainWindow *parent = nullptr);
+    explicit GameInstance(
+        const QString &name, const QString &basePath, const QString &gamePath,
+        std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
+            gamePlugin,
+        QMainWindow *parent = nullptr);
 
     ~GameInstance() override;
 
@@ -47,8 +52,9 @@ class GameInstance : public QMainWindow {
 
   private:
     Ui::GameInstance *ui;
-    LigmaCore::InstanceFilesystem m_instance;
-    std::unique_ptr<QStandardItemModel> m_modTableModel;
+    //LigmaCore::NativeInstanceFilesystem instance;
+    std::unique_ptr<LigmaCore::IInstanceFilesystem> instance;
+    std::unique_ptr<QStandardItemModel> modTableModel;
 
     void setupUi();
 

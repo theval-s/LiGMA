@@ -15,10 +15,14 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 set(MAIN_SOURCES
         src/main.cpp
-        src/instance_filesystem.cpp
+        src/native_instance_filesystem.cpp
         src/config.cpp
         src/plugin_handler.cpp
         src/overlayfs_mount.cpp
+        src/game_launcher.cpp
+        src/i_instance_filesystem.cpp
+        src/proton_instance_filesystem.cpp
+        src/steam_finder.cpp
 )
 
 set(MAIN_UI_SOURCES
@@ -40,3 +44,6 @@ target_link_libraries(stardewPlugin Qt6::Core)
 
 add_library(testPlugin SHARED plugins/testplug.cpp)
 target_link_libraries(testPlugin Qt6::Core)
+
+add_library(balatroPlugin SHARED plugins/balatro.cpp)
+target_link_libraries(balatroPlugin Qt6::Core)
