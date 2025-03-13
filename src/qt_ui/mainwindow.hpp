@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QList>
 #include <QListWidget>
 #include <QMainWindow>
 

@@ -5,6 +5,7 @@
 #include <QPluginLoader>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 
 namespace LigmaCore {
 void PluginHandler::findPlugins(const std::filesystem::path &pluginsDir) {
@@ -14,8 +15,7 @@ void PluginHandler::findPlugins(const std::filesystem::path &pluginsDir) {
             if (file.is_regular_file() && file.path().extension() == ".so") {
                 std::cerr << std::format("current file: {}\n",
                                          file.path().string());
-                QPluginLoader loader =
-                    QPluginLoader(QString(file.path().c_str()));
+                auto loader = QPluginLoader(QString(file.path().c_str()));
                 QJsonObject plug_metadata = loader.metaData();
                 if (!plug_metadata["MetaData"].toObject().contains("name") ||
                     !plug_metadata["MetaData"].toObject().contains("uuid")) {
@@ -24,18 +24,21 @@ void PluginHandler::findPlugins(const std::filesystem::path &pluginsDir) {
                         "does not contain UUID and/or name\n",
                         file.path().string());
                 } else {
-                    PluginInfo plug = {plug_metadata["MetaData"]
-                                           .toObject()["name"]
-                                           .toString()
-                                           .toStdString(),
-                                       file.path().string(),
-                                       plug_metadata["MetaData"]
-                                           .toObject()["uuid"]
-                                           .toString()
-                                           .toStdString()};
-                    m_plugInfoVec.emplace_back(plug);
-                    //!!! check for null in value of name or uuid
-                    m_plugPathByUUID.emplace(plug.uuid, plug.path);
+                    PluginInfo plug = {
+                        plug_metadata["MetaData"].toObject()["name"].toString(),
+                        file.path().string(),
+                        plug_metadata["MetaData"]
+                            .toObject()["uuid"]
+                            .toString()};
+                    if (plug.uuid.isEmpty() || plug.name.isEmpty()) {
+                        std::cerr
+                            << std::format("PluginHandler::findPlugins: "
+                                           "error with plugin {}\n",
+                                           file.path().filename().string());
+                        continue;
+                    }
+                    plugInfoVec.emplace_back(plug);
+                    plugPathByUUID.emplace(plug.uuid, plug.path);
                 }
             }
         }
@@ -45,49 +48,61 @@ void PluginHandler::findPlugins(const std::filesystem::path &pluginsDir) {
     }
 }
 
-LigmaCore::PluginHandler::PluginHandler() {
+PluginHandler::PluginHandler() {
     // TODO: more error handling and etc
     std::filesystem::path plugins_dir =
         std::filesystem::canonical("/proc/self/exe").parent_path() / "plugins";
     findPlugins(plugins_dir);
 }
 
-LigmaPlugin *PluginHandler::getPluginByUUID(const std::string &uuid) {
-    if (m_plugPathByUUID.contains(uuid)) {
-        const std::string path = m_plugPathByUUID[uuid];
-        QPluginLoader loader = QPluginLoader(QString::fromStdString(path));
-        if (QObject *plug = loader.instance()) {
-            std::cerr << loader.isLoaded() << " "
+std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
+PluginHandler::getPluginByUUID(const std::string &uuid) {
+    return std::move(getPluginByUUID(QString::fromStdString(uuid)));
+}
+std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
+PluginHandler::getPluginByUUID(const QString &uuid) {
+    if (plugPathByUUID.contains(uuid)) {
+        const std::string path = plugPathByUUID[uuid];
+        auto loader =
+            std::make_unique<QPluginLoader>(QString::fromStdString(path));
+        if (QObject *plug = loader->instance()) {
+            std::cerr << loader->isLoaded() << " "
                       << plug->metaObject()->className() << std::endl;
-            LigmaPlugin *plugin_interface = qobject_cast<LigmaPlugin *>(plug);
+            auto plugin_interface = qobject_cast<LigmaPlugin *>(plug);
             std::cerr << std::format(
                 "trying to invoke plugin functions:\ngameName(): {}\n gameID():"
                 "{}\n",
-                plugin_interface->gameName(), plugin_interface->gameID());
-            return plugin_interface;
-            // currently needs unloading
+                plugin_interface->gameName().toStdString(),
+                plugin_interface->gameID());
+
+            auto pluginUnloader = [this](LigmaPlugin *plugin) {
+                unloadPlugin(plugin);
+            };
+            plugLoaderByInterface[plugin_interface] = std::move(loader);
+            return std::unique_ptr<LigmaPlugin, decltype(pluginUnloader)>(
+                plugin_interface, pluginUnloader);
+            // not properly tested
         } else
             throw std::runtime_error(
                 std::format("error in plugin loading, error {}\n",
-                            loader.errorString().toStdString()));
+                            loader->errorString().toStdString()));
     } else {
-        throw std::runtime_error(
-            std::format("Failed to find plugin by uuid ({})\n", uuid));
+        throw std::runtime_error(std::format(
+            "Failed to find plugin by uuid ({})\n", uuid.toStdString()));
     }
 }
 
 void PluginHandler::unloadPlugin(LigmaPlugin *plugInterface) {
-    auto iter = m_plugLoaderByInterface.find(plugInterface);
-    if (iter != m_plugLoaderByInterface.end()) {
-        iter->second.unload();
-        m_plugLoaderByInterface.erase(iter);
+    if (plugLoaderByInterface.contains(plugInterface)) {
+        plugLoaderByInterface[plugInterface]->unload();
+        plugLoaderByInterface.erase(plugInterface);
     } else {
         // throw std::runtime_error(std::format("Failed to find stored plugin
         // interface (plugin uuid:{}\n",
         //                                      plugInterface->pluginUUID()));
         std::cerr << std::format(
             "Failed to find stored plugin interface (plugin uuid:{}\n",
-            plugInterface->pluginUUID());
+            plugInterface->pluginUUID().toStdString());
     }
 }
 } // namespace LigmaCore

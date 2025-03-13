@@ -1,9 +1,11 @@
 #include "new_instance_dialog.hpp"
 
+#include "steam_finder.hpp"
 #include "ui_new_instance_dialog.h"
 
 #include <QFileDialog>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <filesystem>
 
 NewInstanceDialog::NewInstanceDialog(const LigmaCore::PluginInfo &info,
@@ -51,10 +53,18 @@ void NewInstanceDialog::validateInputs() {
 }
 
 void NewInstanceDialog::on_gamePathBrowseButton_clicked() {
-    QString game_dir =
-        QFileDialog::getExistingDirectory(this, "Choose game directory");
-    if (!game_dir.isEmpty()) {
-        ui->gamePathLineEdit->setText(game_dir);
+    try {
+        QString game_dir = QFileDialog::getExistingDirectory(
+            this, "Choose game directory",
+            QString::fromStdString((LigmaCore::SteamFinder::findSteamPath() /
+                                    "steamapps" / "common")
+                                       .string()),
+            QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog);
+        if (!game_dir.isEmpty()) {
+            ui->gamePathLineEdit->setText(game_dir);
+        }
+    } catch (const std::exception &e) {
+        QMessageBox::critical(this, "Error", e.what());
     }
 }
 

@@ -3,7 +3,6 @@
 #include "plugin_handler.hpp" //for PluginInfo, but I should probably move it to other scope
 
 #include <QDialog>
-#include <QRegularExpression>
 #include <QString>
 
 namespace Ui {

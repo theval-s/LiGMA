@@ -2,35 +2,44 @@
 
 #include "ui_game_instance.h"
 
+#include <QButtonGroup>
+#include <QDialog>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QRadioButton>
+#include <instance_factory.hpp>
 #include <memory>
 #include <qstandarditemmodel.h>
 
-GameInstance::GameInstance(LigmaCore::InstanceFilesystem instance,
-                           QMainWindow *parent)
+GameInstance::GameInstance(
+    std::unique_ptr<LigmaCore::IInstanceFilesystem> instance,
+    QMainWindow *parent)
     : QMainWindow(parent), ui(new Ui::GameInstance),
-      m_instance(std::move(instance)),
-      m_modTableModel(std::make_unique<QStandardItemModel>(this)) {
+      instance(std::move(instance)),
+      modTableModel(std::make_unique<QStandardItemModel>(this)) {
     setupUi();
 }
 
-GameInstance::GameInstance(const QJsonObject &config,
-                           const std::filesystem::path &configPath,
-                           QMainWindow *parent)
+GameInstance::GameInstance(
+    const QJsonObject &config, const std::filesystem::path &configPath,
+    std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> gamePlugin,
+    QMainWindow *parent)
     : QMainWindow(parent), ui(new Ui::GameInstance),
-      m_instance(config, configPath),
-      m_modTableModel(std::make_unique<QStandardItemModel>(this)) {
+      instance(std::move(LigmaCore::createInstanceFilesystem(
+          config, configPath, std::move(gamePlugin)))),
+      modTableModel(std::make_unique<QStandardItemModel>(this)) {
+
     setupUi();
 }
 
-GameInstance::GameInstance(const QString &name, const QString &basePath,
-                           const QString &gamePath, LigmaPlugin *gamePlugin,
-                           QMainWindow *parent)
+GameInstance::GameInstance(
+    const QString &name, const QString &basePath, const QString &gamePath,
+    std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> gamePlugin,
+    QMainWindow *parent)
     : QMainWindow(parent), ui(new Ui::GameInstance),
-      m_instance(name.toStdString(), basePath.toStdString(),
-                 gamePath.toStdString(), gamePlugin),
-      m_modTableModel(std::make_unique<QStandardItemModel>(this)) {
+      instance(std::move(LigmaCore::createInstanceFilesystem(
+          name, basePath, gamePath, std::move(gamePlugin)))),
+      modTableModel(std::make_unique<QStandardItemModel>(this)) {
     setupUi();
 }
 
@@ -41,9 +50,9 @@ GameInstance::~GameInstance() {
 void GameInstance::setupModTable() {
     QStringList headers;
     headers << "Mod Name" << "Mod Path" << "Enabled";
-    m_modTableModel->setHorizontalHeaderLabels(headers);
+    modTableModel->setHorizontalHeaderLabels(headers);
 
-    ui->modTableView->setModel(m_modTableModel.get());
+    ui->modTableView->setModel(modTableModel.get());
     ui->modTableView->horizontalHeader()->setSectionResizeMode(
         QHeaderView::Stretch);
     // to be expanded...
@@ -52,20 +61,20 @@ void GameInstance::setupModTable() {
 
 void GameInstance::refreshModList() {
     // i hope removing rows frees the memory
-    m_modTableModel->removeRows(0, m_modTableModel->rowCount());
+    modTableModel->removeRows(0, modTableModel->rowCount());
 
-    for (const auto &[modName, modPath] : m_instance.getModList()) {
+    for (const auto &[modName, modPath, state, type] : instance->getModList()) {
         QList<QStandardItem *> row;
         // appendRow() asks for pointers so yeah
-        auto name_item = new QStandardItem(QString::fromStdString(modName));
+        auto name_item = new QStandardItem(modName);
         auto path_item =
             new QStandardItem(QString::fromStdString(modPath.string()));
         auto enabled_item = new QStandardItem();
         enabled_item->setCheckable(true);
-        enabled_item->setCheckState(Qt::Checked);
+        enabled_item->setCheckState(state ? Qt::Checked : Qt::Unchecked);
         row << name_item << path_item << enabled_item;
 
-        m_modTableModel->appendRow(row);
+        modTableModel->appendRow(row);
     }
 }
 
@@ -79,7 +88,7 @@ void GameInstance::validateInputs() {
 
 void GameInstance::refreshUI() {
     refreshModList();
-    if (m_instance.isMounted()) {
+    if (instance->isMounted()) {
         ui->mountGameButton->setEnabled(false);
         ui->unmountGameButton->setEnabled(true);
     } else {
@@ -98,9 +107,41 @@ void GameInstance::selectionCheck(const QItemSelection &selected,
 }
 
 void GameInstance::on_addModButton_clicked() {
-    m_instance.addMod(ui->TEMP_modPathLineEdit->text().toStdString(),
-                      ui->modNameLineEdit->text().toStdString());
-    refreshUI();
+    QString destPath;
+    QDialog dialog(this);
+    dialog.setWindowTitle("Select Mod Destination");
+    auto layout = new QVBoxLayout(&dialog);
+    auto group = new QButtonGroup(&dialog);
+    std::vector<QString> paths = instance->getModPaths();
+    int id = 0;
+    for (const auto &pathString : paths) {
+        QRadioButton *button = new QRadioButton(pathString);
+        group->addButton(button, id++);
+        layout->addWidget(button);
+    }
+    group->buttons()[0]->setChecked(true);
+    auto buttonBox = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout->addWidget(buttonBox);
+    connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        std::cerr << "QDialog accepted with choice: "
+                  << paths[group->checkedId()].toStdString() << std::endl;
+        if (group->checkedId() == 0)
+            destPath = "";
+        else
+            destPath = paths[group->checkedId()];
+        //testing
+        try {
+            instance->addMod(ui->TEMP_modPathLineEdit->text().toStdString(),
+                             ui->modNameLineEdit->text(), destPath);
+        } catch (const std::exception &e) {
+            QMessageBox::critical(this, "Error", e.what());
+        }
+        refreshUI();
+    }
 }
 
 void GameInstance::on_modPathBrowseButton_clicked() {
@@ -112,18 +153,22 @@ void GameInstance::on_modPathBrowseButton_clicked() {
 }
 
 void GameInstance::on_runGameButton_clicked() {
-    m_instance.openGame();
+    instance->runGame();
     refreshUI();
 }
 
 void GameInstance::on_removeModButton_clicked() {
     auto index = ui->modTableView->currentIndex();
-    m_instance.removeMod(index.row());
+    instance->removeMod(index.row());
     refreshUI();
 }
 
 void GameInstance::on_mountGameButton_clicked() {
-    m_instance.mountGameFilesystem();
+    try {
+        instance->mountGameFilesystem();
+    } catch (const std::exception &e) {
+        QMessageBox::warning(this, "Error!", e.what());
+    }
 }
 
 void GameInstance::setupUi() {
@@ -143,6 +188,5 @@ void GameInstance::setupUi() {
             &GameInstance::selectionCheck);
     ui->addModButton->setDisabled(true);
     ui->removeModButton->setDisabled(true);
-    ui->instanceNameLabel->setText(
-        QString::fromStdString(m_instance.getInstanceName()));
+    ui->instanceNameLabel->setText(instance->getInstanceName());
 }

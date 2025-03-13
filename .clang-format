@@ -22,4 +22,5 @@ BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 CompactNamespaces: true
 IncludeBlocks: Regroup
+CommentPragmas: '^'
 
