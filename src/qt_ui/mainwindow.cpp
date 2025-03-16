@@ -106,13 +106,13 @@ void MainWindow::on_openInstanceButton_clicked() {
     // error handling?
     try {
         if (const auto current_selected = ui->instanceList->currentItem()) {
-            int plugin_index = ui->instanceList->row(current_selected);
+            //int plugin_index = ui->instanceList->row(current_selected);
             std::filesystem::path conf_path =
                 LigmaCore::ConfigManager::getConfigPath() /
                 current_selected->text().toStdString();
             const QJsonObject &conf =
                 (LigmaCore::ConfigManager::loadInstance(conf_path));
-            QString plug_uuid = conf["uuid"].toString();
+            QString plug_uuid = conf["pluginUUID"].toString();
             if (plug_uuid.isEmpty()) {
                 QMessageBox::warning(
                     this, "Error",
@@ -120,12 +120,10 @@ void MainWindow::on_openInstanceButton_clicked() {
                     "open instance with it!");
                 return;
             }
-
+            auto plug = LigmaCore::PluginHandler::getInstance().getPluginByUUID(plug_uuid);
             auto *instance = new GameInstance(
                 conf, conf_path,
-                std::move(
-                    LigmaCore::PluginHandler::getInstance().getPluginByUUID(
-                        plug_uuid)));
+                std::move(plug));
             instance->show();
             this->close();
         }

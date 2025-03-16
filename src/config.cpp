@@ -89,7 +89,7 @@ void ConfigManager::CheckModListCorrectness(const QJsonArray &modList) {
     const std::vector<std::pair<QString, QJsonValue::Type>> required_keys = {
         {   "name", QJsonValue::String},
         {   "path", QJsonValue::String},
-        {"enabled", QJsonValue::String},
+        {"enabled", QJsonValue::Bool},
         {   "type", QJsonValue::Double},
     };
     if (modList.isEmpty()) {

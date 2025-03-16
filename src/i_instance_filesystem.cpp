@@ -68,7 +68,8 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
 BaseInstanceFilesystem::BaseInstanceFilesystem(
     const QJsonObject &config, const fs::path &pathToConfig,
     std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
-        gamePlugin) {
+        plugin)
+            : gamePlugin(std::move(plugin)){
     ConfigManager::CheckCorrectness(config);
 
     instanceName = config["instanceName"].toString();
@@ -94,10 +95,15 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
                              static_cast<ModType>(mod_obj["type"].toInt()));
     }
 
-    gamePlugin =
-        std::move(PluginHandler::getInstance().getPluginByUUID(pluginUUID));
+    //gamePlugin =
+    //    std::move(PluginHandler::getInstance().getPluginByUUID(pluginUUID));
 
-    FuseOverlayFSMount::isMounted(basePath / LIGMA_GAME_MERGED_DIR);
+    configPath = QString::fromStdString(pathToConfig);
+    if (FuseOverlayFSMount::isMounted(basePath / LIGMA_GAME_MERGED_DIR)) {
+        std::cerr << "BaseInstanceFilesystem(): config says unmounted, but folder is mounted. Treating it as mounted...\n";
+        mounted = true;
+        BaseInstanceFilesystem::saveState();
+    }
 }
 
 void BaseInstanceFilesystem::copyMod(const QDir &modPath,
