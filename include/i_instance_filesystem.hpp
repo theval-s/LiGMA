@@ -31,7 +31,7 @@ constexpr std::string LIGMA_MOD_FILES_DIR = "mod_files";
 constexpr std::string LIGMA_PREFIX_WORK_DIR = ".work_prefix";
 constexpr std::string LIGMA_PREFIX_MERGED_DIR = "prefix";
 constexpr std::string LIGMA_PREFIX_MODS_DIR = "prefix";
-constexpr std::string LIGMA_PREFIX_UPPER_DIR = "upper";
+constexpr std::string LIGMA_PREFIX_UPPER_DIR = "prefix_upper";
 
 // QString sanitizeForPath(const std::string &);
 QString sanitizeForPath(const QString &);

@@ -52,17 +52,28 @@ void GameLauncher::openWithProton(const std::string &gamePath,
                QString::fromStdString(compatDataPath));
     env.insert("STEAM_COMPAT_CLIENT_INSTALL_PATH",
                QString::fromStdString(SteamFinder::findSteamPath()));
+
+    //FOR TESTING, REMOVE LATER??
+    env.insert("STEAM_RUNTIME", "$HOME/.steam/steam/ubuntu12_32/steam-runtime");
     if (gameID != 0) {
         env.insert("SteamGameId", QString::number(gameID));
         env.insert("SteamAppId", QString::number(gameID));
     }
     for (const auto &v : envVars) {
         //TODO: error handling
-        QStringList list = v.split("=");
-        env.insert(list[1], list[2]);
+        if (int pos = v.indexOf('='); pos > 0) {
+            QString key = v.left(pos);
+            QString value = v.mid(pos+1);
+            env.insert(key, value);
+        }
     }
     protonProcess.setProcessEnvironment(env);
 
+    protonProcess.setProgram("env");
+    // QStringList argtest;
+    // argtest << "";
+    //protonProcess.setArguments(argtest);
+    protonProcess.startDetached();
     try {
         protonProcess.setProgram(
             QString::fromStdString(SteamFinder::findProtonPath(version)));

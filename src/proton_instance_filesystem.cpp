@@ -80,16 +80,18 @@ void ProtonInstanceFilesystem::addMod(const fs::path &modPath,
                              : ModType::GameRoot;
     fs::path destPathResolved = resolveMacros(destPathString).toStdString();
     //we get string like: /home/user/ or pfx
+    fs::path modBasePath = basePath / LIGMA_MOD_FILES_DIR;
     fs::path destPath;
     if (type == ModType::Prefix) {
-        destPath = basePath / LIGMA_MOD_FILES_DIR / LIGMA_PREFIX_MODS_DIR /
-                   sanitizeForPath(modName).toStdString() / destPathResolved;
+        modBasePath = modBasePath / LIGMA_PREFIX_MODS_DIR /
+                      sanitizeForPath(modName).toStdString();
+        destPath = modBasePath / destPathResolved / sanitizeForPath(modName).toStdString();
     } else if (type == ModType::GameRoot) {
-        destPath = basePath / LIGMA_MOD_FILES_DIR /
-                   sanitizeForPath(modName).toStdString() / destPathResolved;
+        modBasePath = modBasePath / sanitizeForPath(modName).toStdString();
+        destPath = modBasePath/ destPathResolved;
     }
     copyMod(modPath, destPath);
-    modList.emplace_back(modName, destPath, true, type);
+    modList.emplace_back(modName, modBasePath, true, type);
     saveState();
     //copyMod throws exceptions, so if we're here then it succeded
     //TODO: add checking of modPath structure
@@ -100,6 +102,7 @@ void ProtonInstanceFilesystem::runGame() {
                                      gamePlugin->executableName().toStdString(),
                                  gamePlugin->environmentVariables(),
                                  basePath / LIGMA_PREFIX_MERGED_DIR,
+                                 gamePlugin->gameID(),
                                  ProtonVersion::Hotfix);
 }
 

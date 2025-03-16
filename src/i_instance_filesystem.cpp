@@ -100,8 +100,14 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
 
     configPath = QString::fromStdString(pathToConfig);
     if (FuseOverlayFSMount::isMounted(basePath / LIGMA_GAME_MERGED_DIR)) {
-        std::cerr << "BaseInstanceFilesystem(): config says unmounted, but folder is mounted. Treating it as mounted...\n";
-        mounted = true;
+        if (!mounted) {
+            std::cerr << "BaseInstanceFilesystem(): config says unmounted, but folder is mounted. Treating it as mounted...\n";
+            mounted = true;
+            BaseInstanceFilesystem::saveState();
+        }
+    } else if (mounted) {
+        std::cerr << "BaseInstanceFilesystem(): config says mounted, but folder is unmounted. Treating it as unmounted...\n\n";
+        mounted = false;
         BaseInstanceFilesystem::saveState();
     }
 }
