@@ -34,7 +34,7 @@ std::filesystem::path LigmaCore::SteamFinder::findSteamPath() {
 std::filesystem::path
 LigmaCore::SteamFinder::findProtonPath(const ProtonVersion &version) {
     std::filesystem::path searchPath = findSteamPath();
-    searchPath /= "/steamapps/common/";
+    searchPath = searchPath/ "steamapps"/"common";
     if (std::filesystem::exists(searchPath / protonDirName[version])) {
         return searchPath / protonDirName[version] / "proton";
     } else
