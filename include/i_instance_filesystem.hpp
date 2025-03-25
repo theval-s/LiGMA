@@ -63,6 +63,7 @@ class IInstanceFilesystem {
     [[nodiscard]] virtual QJsonObject toJson() const = 0;
     [[nodiscard]] virtual QString getInstanceName() const = 0;
     [[nodiscard]] virtual std::vector<ModInfo> getModList() const = 0;
+    virtual void setModList(const std::vector<ModInfo> &) = 0;
     [[nodiscard]] virtual std::vector<QString> getModPaths() const = 0;
 };
 
@@ -135,6 +136,10 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     }
     [[nodiscard]] std::vector<ModInfo> getModList() const override {
         return modList;
+    }
+    void setModList(const std::vector<ModInfo> &newList) override {
+        //TODO: figure out a way to implement order swapping in Qt
+        modList = newList;
     }
     [[nodiscard]] std::vector<QString> getModPaths() const override {
         std::vector<QString> paths = gamePlugin->modPaths();
