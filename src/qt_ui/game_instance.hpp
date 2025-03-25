@@ -11,6 +11,27 @@ namespace Ui {
 class GameInstance;
 }
 
+class ModTableModel : public QStandardItemModel {
+    Q_OBJECT
+public:
+    explicit ModTableModel(QObject *parent = nullptr) : QStandardItemModel(parent) {}
+
+    Qt::DropActions supportedDropActions() const override {
+        return Qt::MoveAction;
+    }
+    Qt::ItemFlags flags(const QModelIndex &index) const override {
+        if (!index.isValid()) return Qt::ItemIsDropEnabled;
+        return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
+    }
+    //drag&drop
+     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row,
+                      int column, const QModelIndex &parent) override;
+
+  signals:
+        void modOrderChanged();
+};
+
+
 class GameInstance : public QMainWindow {
     Q_OBJECT
 
@@ -41,6 +62,7 @@ class GameInstance : public QMainWindow {
     void refreshUI();
     void selectionCheck(const QItemSelection &selected,
                         const QItemSelection &deselected);
+    void updateModList();
 
     // Auto MOC slots
     void on_addModButton_clicked();
@@ -54,11 +76,14 @@ class GameInstance : public QMainWindow {
     Ui::GameInstance *ui;
     //LigmaCore::NativeInstanceFilesystem instance;
     std::unique_ptr<LigmaCore::IInstanceFilesystem> instance;
-    std::unique_ptr<QStandardItemModel> modTableModel;
+    std::unique_ptr<ModTableModel> modTableModel;
+    //ModTableModel modTableModel;
 
     void setupUi();
 
     void setupModTable();
 
     void refreshModList();
+
 };
+
