@@ -44,7 +44,7 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
     const fs::path &gamePath,
     std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> gamePlugin)
     : basePath(basePath), gamePath(gamePath), instanceName(instanceName),
-      configPath(ConfigManager::getConfigPathQString() +
+      configPath(ConfigLoader::getConfigPathQString() +
                  (sanitizeForPath(instanceName) + ".json")),
       gamePlugin(std::move(gamePlugin)) {
     // TODO: check if gamePath has gameExeName
@@ -63,14 +63,18 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
     fs::create_directory(basePath / LIGMA_GAME_WORK_DIR, basePath);
     fs::create_directory(basePath / LIGMA_MOD_FILES_DIR);
     //TODO: add logging
-    //saveState();
+
+    for (const auto &var : this->gamePlugin->environmentVariables()) {
+        userConfig.addEnvironmentVariable(var);
+    }
+
 }
 BaseInstanceFilesystem::BaseInstanceFilesystem(
     const QJsonObject &config, const fs::path &pathToConfig,
     std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
         plugin)
             : gamePlugin(std::move(plugin)){
-    ConfigManager::CheckCorrectness(config);
+    ConfigLoader::CheckCorrectness(config);
 
     instanceName = config["instanceName"].toString();
     basePath = config["basePath"].toString().toStdString();
@@ -83,8 +87,9 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
             "BaseInstanceFilesystem(): UUID in supplied plugin and supplied "
             "config file are different");
     }
+    //TODO: Make UserConfig from json
 
-    ConfigManager::CheckModListCorrectness(mod_list_array);
+    ConfigLoader::CheckModListCorrectness(mod_list_array);
 
     for (auto iter = mod_list_array.begin(); iter != mod_list_array.end();
          ++iter) {
@@ -94,10 +99,7 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
                              mod_obj["enabled"].toBool(),
                              static_cast<ModType>(mod_obj["type"].toInt()));
     }
-
-    //gamePlugin =
-    //    std::move(PluginHandler::getInstance().getPluginByUUID(pluginUUID));
-
+    userConfig.updateFromJson(config);
     configPath = QString::fromStdString(pathToConfig);
     if (FuseOverlayFSMount::isMounted(basePath / LIGMA_GAME_MERGED_DIR)) {
         if (!mounted) {
@@ -178,7 +180,7 @@ QJsonObject BaseInstanceFilesystem::toJson() const {
         // in case something else gets added I've structured it like that
         mods_array.append(mod_object);
     }
-    return {
+    QJsonObject obj = {
         {"instanceName",                     instanceName},
         {  "pluginUUID",                       pluginUUID},
         {    "basePath", QString::fromStdString(basePath)},
@@ -186,6 +188,11 @@ QJsonObject BaseInstanceFilesystem::toJson() const {
         {     "mounted",              QJsonValue(mounted)},
         {     "modList",                       mods_array},
     };
+    QJsonObject user_json = userConfig.toJson();
+    for (auto it = user_json.begin(); it != user_json.end(); ++it) {
+        obj.insert(it.key(), it.value());
+    }
+    return obj;
 }
 
 QString

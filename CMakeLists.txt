@@ -29,6 +29,7 @@ set(MAIN_UI_SOURCES
         src/qt_ui/mainwindow.cpp
         src/qt_ui/new_instance_dialog.cpp
         src/qt_ui/game_instance.cpp
+        src/qt_ui/instance_options.cpp
 )
 
 add_executable(main ${MAIN_SOURCES} ${MAIN_UI_SOURCES})

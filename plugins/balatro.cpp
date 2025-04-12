@@ -16,7 +16,7 @@ class LigmaBalatro final : public QObject, public LigmaPlugin {
     QString executableName() const override { return "Balatro.exe"; }
     bool usesProton() const override { return true; }
     std::vector<QString> environmentVariables() const override {
-        return {"WINEDLLOVERRIDES=version=n,b"};
+        return {"WINEDLLOVERRIDES=\"version=n,b\""};
     }
     std::vector<QString> modPaths() const override {
         return {

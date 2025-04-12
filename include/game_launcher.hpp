@@ -1,4 +1,5 @@
 #pragma once
+#include "config.hpp"
 #include "steam_finder.hpp"
 
 #include <QString>
@@ -10,13 +11,12 @@ namespace LigmaCore {
 class GameLauncher {
   public:
     static void openNative(const std::string &gamePath
-                           //,const std::vector<QString> &args
+                           ,const UserConfig &cfg
     );
     static void
     openWithProton(const std::string &gamePath,
-                   const std::vector<QString> &envVars,
                    const std::string &compatDataPath, const int &gameID,
-                   const ProtonVersion &version = ProtonVersion::Hotfix);
+                   const UserConfig &cfg);
 };
 
 } // namespace LigmaCore

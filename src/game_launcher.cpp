@@ -10,9 +10,9 @@
 
 namespace LigmaCore {
 void GameLauncher::openNative(const std::string &gamePath
-                              //,const std::vector<QString> &args
+                              ,const UserConfig &cfg
 ) {
-
+    //TODO: add steam runtime and UserConfig int
     try {
         QProcess process;
         process.setProgram(QString::fromStdString(gamePath));
@@ -27,10 +27,9 @@ void GameLauncher::openNative(const std::string &gamePath
     }
 }
 void GameLauncher::openWithProton(const std::string &gamePath,
-                                  const std::vector<QString> &envVars,
                                   const std::string &compatDataPath,
                                   const int &gameID,
-                                  const ProtonVersion &version) {
+                                  const UserConfig &cfg) {
     QProcess protonProcess;
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     // my tested pipeline without any other tools (Balatro for example):
@@ -48,19 +47,28 @@ void GameLauncher::openWithProton(const std::string &gamePath,
     //   WINEDLLOVERRIDES="version=n,b" STEAM_COMPAT_DATA_PATH=/tmp/test/pfx/ /home/val/.steam/root/steamapps/common/Proton\ Hotfix/proton run
     //   /tmp/test/game/merged/Balatro.exe # %command%
 
+    //  Possible way:
+    // Steam launches games like this:
+    //    /home/val/.local/share/Steam/ubuntu12_32/steam-launch-wrapper --
+    //    /home/val/.local/share/Steam/ubuntu12_32/reaper SteamLaunch AppId=2379780 --
+    //    '/home/val/.local/share/Steam/steamapps/common/SteamLinuxRuntime_sniper'/_v2-entry-point --verb=waitforexitandrun --
+    //    '/home/val/.local/share/Steam/steamapps/common/Proton Hotfix'/proton waitforexitandrun  '/home/val/.local/share/Steam/steamapps/common/Balatro/Balatro.exe'
+    //    (1 command)
+    // I got this by setting "echo '%command%' > filename" in steam game launch options
+    // So maybe launching with steam-launch-wrapper would correctly launch with SteamOverlay?
+
+    //TODO: add steam runtime
     env.insert("STEAM_COMPAT_DATA_PATH",
                QString::fromStdString(compatDataPath));
     env.insert("STEAM_COMPAT_CLIENT_INSTALL_PATH",
                QString::fromStdString(SteamFinder::findSteamPath()));
 
-    //FOR TESTING, REMOVE LATER??
-    env.insert("STEAM_RUNTIME", "$HOME/.steam/steam/ubuntu12_32/steam-runtime");
     if (gameID != 0) {
         env.insert("SteamGameId", QString::number(gameID));
         env.insert("SteamAppId", QString::number(gameID));
     }
-    for (const auto &v : envVars) {
-        //TODO: error handling
+
+    for (const auto &v : cfg.getEnvironmentVariables()) {
         if (int pos = v.indexOf('='); pos > 0) {
             QString key = v.left(pos);
             QString value = v.mid(pos+1);
@@ -69,14 +77,11 @@ void GameLauncher::openWithProton(const std::string &gamePath,
     }
     protonProcess.setProcessEnvironment(env);
 
-    protonProcess.setProgram("env");
-    // QStringList argtest;
-    // argtest << "";
-    //protonProcess.setArguments(argtest);
-    protonProcess.startDetached();
+    // protonProcess.setProgram("env");
+    // protonProcess.startDetached();
     try {
         protonProcess.setProgram(
-            QString::fromStdString(SteamFinder::findProtonPath(version)));
+            QString::fromStdString(SteamFinder::findProtonPath(cfg.getProtonVersion())));
         QStringList args;
         args << "run" << QString::fromStdString(gamePath);
         protonProcess.setArguments(args);

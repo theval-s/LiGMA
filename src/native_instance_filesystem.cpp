@@ -78,7 +78,7 @@ void NativeInstanceFilesystem::runGame() {
     // mountModFilesystem();
     if (!mounted) mountGameFilesystem();
     GameLauncher::openNative(basePath / LIGMA_GAME_MERGED_DIR /
-                             gamePlugin->executableName().toStdString());
+                             gamePlugin->executableName().toStdString(), userConfig);
 }
 
 void NativeInstanceFilesystem::unmountGameFilesystem() {

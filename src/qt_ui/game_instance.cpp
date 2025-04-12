@@ -1,5 +1,6 @@
 #include "game_instance.hpp"
 
+#include "instance_options.hpp"
 #include "ui_game_instance.h"
 
 #include <QButtonGroup>
@@ -7,10 +8,10 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QRadioButton>
+#include <QTimer>
 #include <instance_factory.hpp>
 #include <memory>
 #include <qstandarditemmodel.h>
-#include <QTimer>
 
 bool ModTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
                                  int row, int column,
@@ -25,7 +26,7 @@ bool ModTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
         QStandardItemModel::dropMimeData(data, action, row, 0, parent);
     if (result) {
         //emit modOrderChanged();
-        QTimer::singleShot(0,this, [this](){ emit modOrderChanged(); });
+        QTimer::singleShot(0, this, [this]() { emit modOrderChanged(); });
     }
     return result;
 }
@@ -70,11 +71,6 @@ void GameInstance::setupModTable() {
     headers << "Mod Name" << "Enabled" << "Mod Path";
     modTableModel->setHorizontalHeaderLabels(headers);
     ui->modTableView->setModel(modTableModel.get());
-    //ui->modTableView->setDragEnabled(true);
-    //ui->modTableView->setAcceptDrops(true);
-    //ui->modTableView->setDropIndicatorShown(true);
-    //ui->modTableView->setDragDropMode(QAbstractItemView::InternalMove);
-    //ui->modTableView->setSelectionMode(QAbstractItemView::SingleSelection);
 
     ui->modTableView->horizontalHeader()->setSectionResizeMode(
         QHeaderView::Interactive);
@@ -94,7 +90,7 @@ void GameInstance::refreshModList() {
             new QStandardItem(QString::fromStdString(modPath.string()));
         enabled_item->setCheckable(true);
         enabled_item->setCheckState(state ? Qt::Checked : Qt::Unchecked);
-        row << name_item << enabled_item << path_item ;
+        row << name_item << enabled_item << path_item;
         modTableModel->appendRow(row);
     }
 }
@@ -107,9 +103,11 @@ void GameInstance::updateModList() {
 
         //This is ineffective as hell but I'm not sure how
         //Might take a look at how MO2 does it I guess
-        for (const auto& mod : instance->getModList()) {
+        for (const auto &mod : instance->getModList()) {
             if (mod.name == mod_name) {
-                new_order.emplace_back(mod_name, std::filesystem::path(mod_path.toStdString()), enabled, mod.type);
+                new_order.emplace_back(
+                    mod_name, std::filesystem::path(mod_path.toStdString()),
+                    enabled, mod.type);
                 break;
             }
         }
@@ -184,7 +182,6 @@ void GameInstance::on_addModButton_clicked() {
         }
         refreshUI();
     }
-
 }
 
 void GameInstance::on_modPathBrowseButton_clicked() {
@@ -213,6 +210,17 @@ void GameInstance::on_mountGameButton_clicked() {
         QMessageBox::warning(this, "Error!", e.what());
     }
 }
+void GameInstance::on_settingsButton_clicked() {
+    InstanceOptions settings(instance->getUserConfigRef(),
+                             instance->isUsingProton(), this);
+    settings.setModal(true);
+    settings.exec();
+
+    //Runs after dialog has finished;
+    if (settings.changed) {
+        instance->saveState();
+    }
+}
 
 void GameInstance::setupUi() {
 
@@ -230,7 +238,8 @@ void GameInstance::setupUi() {
     connect(ui->modTableView->selectionModel(),
             &QItemSelectionModel::selectionChanged, this,
             &GameInstance::selectionCheck);
-    connect(modTableModel.get(), &ModTableModel::modOrderChanged, this, &GameInstance::updateModList);
+    connect(modTableModel.get(), &ModTableModel::modOrderChanged, this,
+            &GameInstance::updateModList);
     ui->addModButton->setDisabled(true);
     ui->removeModButton->setDisabled(true);
     ui->instanceNameLabel->setText(instance->getInstanceName());

@@ -8,15 +8,30 @@
 #include <string>
 
 namespace LigmaCore {
-enum ProtonVersion { Hotfix, Experimental, Eight };
-
+enum ProtonVersion {
+    Hotfix = 0,
+    Experimental = 1,
+    Next = 2,
+    Seven = 3,
+    Eight = 4,
+    NineBeta = 5,
+};
+enum SteamRuntimeVersion {
+    None = 0,
+    Scout = 1,
+    Soldier = 2,
+    Sniper = 3
+};
 namespace SteamFinder {
-
+//TODO: Detect existing Proton and SteamRuntime installs
 //this should be probably refactored to make it a bit more optimized
 inline std::map<ProtonVersion, std::string> protonDirName = {
+    {      ProtonVersion::Next,         "Proton Next"},
+{      ProtonVersion::Seven,         "Proton 7.0"},
+{      ProtonVersion::Eight,         "Proton 8.0"},
+{      ProtonVersion::NineBeta,         "Proton 9.0 (Beta)"},
     {      ProtonVersion::Hotfix,         "Proton Hotfix"},
     {ProtonVersion::Experimental, "Proton - Experimental"},
-    {       ProtonVersion::Eight,            "Proton 8.0"}
 };
 std::filesystem::path findSteamPath();
 std::filesystem::path

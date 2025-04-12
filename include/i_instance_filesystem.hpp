@@ -33,7 +33,6 @@ constexpr std::string LIGMA_PREFIX_MERGED_DIR = "prefix";
 constexpr std::string LIGMA_PREFIX_MODS_DIR = "prefix";
 constexpr std::string LIGMA_PREFIX_UPPER_DIR = "prefix_upper";
 
-// QString sanitizeForPath(const std::string &);
 QString sanitizeForPath(const QString &);
 
 class IInstanceFilesystem {
@@ -65,6 +64,8 @@ class IInstanceFilesystem {
     [[nodiscard]] virtual std::vector<ModInfo> getModList() const = 0;
     virtual void setModList(const std::vector<ModInfo> &) = 0;
     [[nodiscard]] virtual std::vector<QString> getModPaths() const = 0;
+    [[nodiscard]] virtual UserConfig& getUserConfigRef() = 0;
+    virtual bool isUsingProton() const = 0;
 };
 
 class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
@@ -75,6 +76,7 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     QString pluginUUID;
     //! @brief Path to config file for that specific instance, ending with .json
     QString configPath;
+    UserConfig userConfig;
     std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> gamePlugin;
     bool mounted = false;
 
@@ -126,7 +128,7 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     //virtual void addMod(const fs::path &modPath, const fs::path &modName, const QString &destPathString) = 0;
     void removeMod(const size_t &id) override;
     void saveState() const override {
-        ConfigManager::saveInstance(configPath, this->toJson());
+        ConfigLoader::saveInstance(configPath, this->toJson());
     }
 
     bool isMounted() const override { return mounted; }
@@ -152,6 +154,9 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     /// dir1:dir2:...:dirn. Need to add game path or prefix path after this.
     /// @param type ModType::GameRoot or ModType::Prefix
     [[nodiscard]] QString getModsLowerDirsString(const ModType &type) const;
+
+    [[nodiscard]] UserConfig& getUserConfigRef() override { return userConfig; }
+    bool isUsingProton() const override { return gamePlugin->usesProton(); }
 };
 
 } // namespace LigmaCore

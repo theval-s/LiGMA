@@ -19,7 +19,7 @@ void MainWindow::RefreshLists() {
     for (const auto &p : info) {
         ui->pluginsList->addItem(p.name);
     }
-    for (const auto &s : LigmaCore::ConfigManager::getSavedInstanceNames()) {
+    for (const auto &s : LigmaCore::ConfigLoader::getSavedInstanceNames()) {
         ui->instanceList->addItem(QString::fromStdString(s));
     }
 }
@@ -108,10 +108,10 @@ void MainWindow::on_openInstanceButton_clicked() {
         if (const auto current_selected = ui->instanceList->currentItem()) {
             //int plugin_index = ui->instanceList->row(current_selected);
             std::filesystem::path conf_path =
-                LigmaCore::ConfigManager::getConfigPath() /
+                LigmaCore::ConfigLoader::getConfigPath() /
                 current_selected->text().toStdString();
             const QJsonObject &conf =
-                (LigmaCore::ConfigManager::loadInstance(conf_path));
+                (LigmaCore::ConfigLoader::loadInstance(conf_path));
             QString plug_uuid = conf["pluginUUID"].toString();
             if (plug_uuid.isEmpty()) {
                 QMessageBox::warning(

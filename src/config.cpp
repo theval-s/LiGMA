@@ -6,20 +6,19 @@
 #include <QJsonDocument>
 #include <format>
 #include <iostream>
-//#include <QCoreApplication>
 
 namespace LigmaCore {
-void ConfigManager::saveInstance(const fs::path &configPath,
+void ConfigLoader::saveInstance(const fs::path &configPath,
                                  const QJsonObject &config) {
     QFile file(configPath);
     saveInstance(file, config);
 }
-void ConfigManager::saveInstance(const QString &configPath,
+void ConfigLoader::saveInstance(const QString &configPath,
                                  const QJsonObject &config) {
     QFile file(configPath);
     saveInstance(file, config);
 }
-void ConfigManager::saveInstance(QFile &file, const QJsonObject &config) {
+void ConfigLoader::saveInstance(QFile &file, const QJsonObject &config) {
     // TODO: proper error handling (check for .json etc etc
 
     //truncates by default
@@ -34,8 +33,40 @@ void ConfigManager::saveInstance(QFile &file, const QJsonObject &config) {
     }
     file.write(QJsonDocument(config).toJson());
 }
+QJsonObject UserConfig::toJson() const {
+    QJsonObject config;
+    if (useHomeIsolation) {
+        config["useHomeIsolation"] = useHomeIsolation;
+    }
+    if (protonVersion != Hotfix) {
+        config["protonVersion"] = protonVersion;
+    }
+    if (!environmentVariables.empty()) {
+        QJsonArray env_array;
+        for (const auto &var : environmentVariables) {
+            env_array.append(var);
+        }
+        config["environmentVariables"] = env_array;
+    }
+    return config;
+}
+void UserConfig::updateFromJson(const QJsonObject &json) {
+    //check types for possible errors?
+    if (json.contains("useHomeIsolation")) {
+        useHomeIsolation = json["useHomeIsolation"].toBool();
+    }
+    if (json.contains("protonVersion")) {
+        protonVersion = static_cast<ProtonVersion>(json["protonVersion"].toInt());
+    }
+    if (json.contains("environmentVariables")) {
+        QJsonArray env_array = json["environmentVariables"].toArray();
+        for (int i = 0; i < env_array.size(); i++) {
+            environmentVariables.emplace_back(env_array[i].toString());
+        }
+    }
+}
 
-QJsonObject ConfigManager::loadInstance(const fs::path &jsonPath) {
+QJsonObject ConfigLoader::loadInstance(const fs::path &jsonPath) {
     // TODO: proper error handling
     QFile file(jsonPath);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -49,17 +80,17 @@ QJsonObject ConfigManager::loadInstance(const fs::path &jsonPath) {
     return loadedFile.object();
 }
 
-std::filesystem::path ConfigManager::getConfigPath() {
+std::filesystem::path ConfigLoader::getConfigPath() {
     return fs::canonical("/proc/self/exe").parent_path() / "config";
 }
-QString ConfigManager::getConfigPathQString() {
-    //return QCoreApplication::applicationDirPath();
+QString ConfigLoader::getConfigPathQString() {
+    // Use QSettings to get /home/user/.config/appname or maybe use XDG_CONFIG_HOME?
     QDir result("/proc/self/exe");
     QDir exePath = result.canonicalPath();
     exePath.cd("..");
     return exePath.absolutePath() + "/config/";
 }
-void ConfigManager::CheckCorrectness(const QJsonObject &config) {
+void ConfigLoader::CheckCorrectness(const QJsonObject &config) {
     if (config.isEmpty()) {
         throw std::invalid_argument(
             "ConfigManager::CheckCorrectness: empty config");
@@ -85,17 +116,17 @@ void ConfigManager::CheckCorrectness(const QJsonObject &config) {
     }
 }
 
-void ConfigManager::CheckModListCorrectness(const QJsonArray &modList) {
+void ConfigLoader::CheckModListCorrectness(const QJsonArray &modList) {
     const std::vector<std::pair<QString, QJsonValue::Type>> required_keys = {
         {   "name", QJsonValue::String},
         {   "path", QJsonValue::String},
         {"enabled", QJsonValue::Bool},
         {   "type", QJsonValue::Double},
     };
-    if (modList.isEmpty()) {
-        throw std::runtime_error(
-            "ConfigManager::CheckModListCorrectness: empty modList");
-    }
+    // if (modList.isEmpty()) {
+    //     // throw std::runtime_error(
+    //     //     "ConfigManager::CheckModListCorrectness: empty modList");
+    // }
     for (auto iter = modList.begin(); iter != modList.end(); ++iter) {
         QJsonObject mod = iter->toObject();
         for (const auto &[key, expected_type] : required_keys) {
@@ -113,7 +144,7 @@ void ConfigManager::CheckModListCorrectness(const QJsonArray &modList) {
     }
 }
 
-std::vector<std::string> ConfigManager::getSavedInstanceNames() {
+std::vector<std::string> ConfigLoader::getSavedInstanceNames() {
     std::vector<std::string> result;
     // maybe using some env variable to store path to config?
     fs::path configPath = getConfigPath();

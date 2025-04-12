@@ -13,8 +13,9 @@ class GameInstance;
 
 class ModTableModel : public QStandardItemModel {
     Q_OBJECT
-public:
-    explicit ModTableModel(QObject *parent = nullptr) : QStandardItemModel(parent) {}
+  public:
+    explicit ModTableModel(QObject *parent = nullptr)
+        : QStandardItemModel(parent) {}
 
     Qt::DropActions supportedDropActions() const override {
         return Qt::MoveAction;
@@ -24,13 +25,12 @@ public:
         return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
     }
     //drag&drop
-     bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row,
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row,
                       int column, const QModelIndex &parent) override;
 
   signals:
-        void modOrderChanged();
+    void modOrderChanged();
 };
-
 
 class GameInstance : public QMainWindow {
     Q_OBJECT
@@ -69,6 +69,7 @@ class GameInstance : public QMainWindow {
     void on_modPathBrowseButton_clicked();
     void on_removeModButton_clicked();
     void on_mountGameButton_clicked();
+    void on_settingsButton_clicked();
     // void on_unmountGameButton_clicked();
     void on_runGameButton_clicked();
 
@@ -84,6 +85,4 @@ class GameInstance : public QMainWindow {
     void setupModTable();
 
     void refreshModList();
-
 };
-

@@ -100,10 +100,9 @@ void ProtonInstanceFilesystem::runGame() {
     if (!mounted) mountGameFilesystem();
     GameLauncher::openWithProton(basePath / LIGMA_GAME_MERGED_DIR /
                                      gamePlugin->executableName().toStdString(),
-                                 gamePlugin->environmentVariables(),
                                  basePath / LIGMA_PREFIX_MERGED_DIR,
                                  gamePlugin->gameID(),
-                                 ProtonVersion::Hotfix);
+                                 userConfig);
 }
 
 //QJsonObject ProtonInstanceFilesystem::toJson() const {}
