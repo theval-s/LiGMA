@@ -25,8 +25,6 @@ void GameLauncher::openNative(const std::string &gamePath,
         process.setProgram(QString::fromStdString(
             SteamFinder::findSteamRuntimePath(cfg.getSteamRuntimeVersion())));
         args_list << QString::fromStdString(gamePath);
-        //testing
-        args_list << "echo" << "1234";
     } else {
         process.setProgram(QString::fromStdString(gamePath));
     }
