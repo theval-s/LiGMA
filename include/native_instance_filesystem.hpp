@@ -23,7 +23,7 @@ class NativeInstanceFilesystem : public BaseInstanceFilesystem {
             gamePlugin);
     ~NativeInstanceFilesystem() override {
         // std::cerr << "InstanceFilesystem deconstructed\n";
-        if (mounted) NativeInstanceFilesystem::unmountGameFilesystem();
+        // if (mounted) NativeInstanceFilesystem::unmountGameFilesystem();
     }
 
     void mountGameFilesystem() override;

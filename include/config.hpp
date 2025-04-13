@@ -39,7 +39,7 @@ class ConfigLoader {
 class UserConfig {
     //maybe using this as a base class and make ProtonUserConfig?
     //also maybe I can add option of using mount instead of fuse-overlayfs, but using pkexec()?
-private:
+  private:
     ProtonVersion protonVersion = Hotfix;
     bool useHomeIsolation = false;
     std::vector<QString> environmentVariables = {};
@@ -63,7 +63,9 @@ private:
         environmentVariables.push_back(variable);
     }
     void modifyEnvironmentVariable(const int index, const QString &newValue) {
-        if (index < 0 && index > environmentVariables.size()) { return; }
+        if (index < 0 && index > environmentVariables.size()) {
+            return;
+        }
         if (index == environmentVariables.size()) {
             addEnvironmentVariable(newValue);
             return;
@@ -74,7 +76,9 @@ private:
     [[nodiscard]] std::vector<QString> getEnvironmentVariables() const {
         return environmentVariables;
     }
-    [[nodiscard]] ProtonVersion getProtonVersion() const { return protonVersion; }
+    [[nodiscard]] ProtonVersion getProtonVersion() const {
+        return protonVersion;
+    }
     [[nodiscard]] bool getUseHomeIsolation() const { return useHomeIsolation; }
 
     QJsonObject toJson() const;

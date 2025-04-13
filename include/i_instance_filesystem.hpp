@@ -64,7 +64,7 @@ class IInstanceFilesystem {
     [[nodiscard]] virtual std::vector<ModInfo> getModList() const = 0;
     virtual void setModList(const std::vector<ModInfo> &) = 0;
     [[nodiscard]] virtual std::vector<QString> getModPaths() const = 0;
-    [[nodiscard]] virtual UserConfig& getUserConfigRef() = 0;
+    [[nodiscard]] virtual UserConfig &getUserConfigRef() = 0;
     virtual bool isUsingProton() const = 0;
 };
 
@@ -155,7 +155,7 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     /// @param type ModType::GameRoot or ModType::Prefix
     [[nodiscard]] QString getModsLowerDirsString(const ModType &type) const;
 
-    [[nodiscard]] UserConfig& getUserConfigRef() override { return userConfig; }
+    [[nodiscard]] UserConfig &getUserConfigRef() override { return userConfig; }
     bool isUsingProton() const override { return gamePlugin->usesProton(); }
 };
 

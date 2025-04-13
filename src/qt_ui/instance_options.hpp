@@ -39,6 +39,5 @@ class InstanceOptions : public QDialog {
     void on_addVariableButton_clicked();
     void on_environmentVariablesTableWidget_itemSelectionChanged();
     void on_removeVariableButton_clicked();
-    void on_environmentVariablesTableWidget_itemChanged(
-        QTableWidgetItem *item);
+    void on_environmentVariablesTableWidget_itemChanged(QTableWidgetItem *item);
 };

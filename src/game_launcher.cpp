@@ -22,7 +22,8 @@ void GameLauncher::openNative(const std::string &gamePath,
             //LD_PRELOAD instead of pressure_vessel
             env.insert("PRESSURE_VESSEL_SHARE_HOME", "0");
         }
-        process.setProgram(QString::fromStdString(SteamFinder::findSteamRuntimePath(cfg.getSteamRuntimeVersion())));
+        process.setProgram(QString::fromStdString(
+            SteamFinder::findSteamRuntimePath(cfg.getSteamRuntimeVersion())));
         args_list << QString::fromStdString(gamePath);
         //testing
         args_list << "echo" << "1234";
@@ -38,7 +39,9 @@ void GameLauncher::openNative(const std::string &gamePath,
     process.start();
     process.waitForFinished(250);
     if (process.exitCode() != 0) {
-        throw std::runtime_error(std::format("Test process \"{}\" failed: {}", process.program().toStdString(),process.errorString().toStdString()));
+        throw std::runtime_error(std::format(
+            "Test process \"{}\" failed: {}", process.program().toStdString(),
+            process.errorString().toStdString()));
     }
     process.kill();
     //Giving process a miniscule amount to get killed, or it will try to startDetached immediately
@@ -49,8 +52,7 @@ void GameLauncher::openNative(const std::string &gamePath,
 }
 void GameLauncher::openWithProton(const std::string &gamePath,
                                   const std::string &compatDataPath,
-                                  const int &gameID,
-                                  const UserConfig &cfg) {
+                                  const int &gameID, const UserConfig &cfg) {
     QProcess protonProcess;
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     // my tested pipeline without any other tools (Balatro for example):
@@ -109,7 +111,6 @@ void GameLauncher::openWithProton(const std::string &gamePath,
     args << "run" << QString::fromStdString(gamePath);
     protonProcess.setArguments(args);
     protonProcess.startDetached();
-
 
     //TODO:
     //      allow using Proton not from steam by supplying proton path (in app or through env)

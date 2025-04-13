@@ -120,10 +120,9 @@ void MainWindow::on_openInstanceButton_clicked() {
                     "open instance with it!");
                 return;
             }
-            auto plug = LigmaCore::PluginHandler::getInstance().getPluginByUUID(plug_uuid);
-            auto *instance = new GameInstance(
-                conf, conf_path,
-                std::move(plug));
+            auto plug = LigmaCore::PluginHandler::getInstance().getPluginByUUID(
+                plug_uuid);
+            auto *instance = new GameInstance(conf, conf_path, std::move(plug));
             instance->show();
             this->close();
         }

@@ -22,12 +22,13 @@ InstanceOptions::InstanceOptions(LigmaCore::UserConfig &cfg,
         ui->useHomeIsolationCheckBox->setChecked(cfg.getUseHomeIsolation());
         fillProtonComboBox();
         //Connect after filling to not trigger on initial index change
-        connect(ui->protonVersionComboBox, &QComboBox::currentIndexChanged, this, &InstanceOptions::protonVersionComboBoxIndexChanged);
+        connect(ui->protonVersionComboBox, &QComboBox::currentIndexChanged,
+                this, &InstanceOptions::protonVersionComboBoxIndexChanged);
     }
     fillEnvironmentVariablesTable();
     fillSteamRuntimeComboBox();
-    connect(ui->steamRuntimeComboBox, &QComboBox::currentIndexChanged, this, &InstanceOptions::steamRuntimeComboBoxIndexChanged);
-
+    connect(ui->steamRuntimeComboBox, &QComboBox::currentIndexChanged, this,
+            &InstanceOptions::steamRuntimeComboBoxIndexChanged);
 }
 
 InstanceOptions::~InstanceOptions() {
@@ -36,10 +37,13 @@ InstanceOptions::~InstanceOptions() {
 void InstanceOptions::fillEnvironmentVariablesTable() {
     auto vars = cfg.getEnvironmentVariables();
     //it's intended to only do initial setup
-    if (ui->environmentVariablesTableWidget->rowCount() > 0) { return; }
+    if (ui->environmentVariablesTableWidget->rowCount() > 0) {
+        return;
+    }
     for (int i = 0; i < vars.size(); ++i) {
         ui->environmentVariablesTableWidget->insertRow(i);
-        ui->environmentVariablesTableWidget->setItem(i, 0, new QTableWidgetItem(vars[i]));
+        ui->environmentVariablesTableWidget->setItem(
+            i, 0, new QTableWidgetItem(vars[i]));
     }
 }
 void InstanceOptions::fillProtonComboBox() {
@@ -57,7 +61,7 @@ void InstanceOptions::fillSteamRuntimeComboBox() {
     ui->steamRuntimeComboBox->setCurrentIndex(cfg.getSteamRuntimeVersion());
 }
 void InstanceOptions::on_useHomeIsolationCheckBox_stateChanged(int state) {
-    changed=true;
+    changed = true;
     if (Qt::Checked == state) {
         cfg.setUseHomeIsolation(true);
     } else {
@@ -90,7 +94,7 @@ void InstanceOptions::on_removeVariableButton_clicked() {
 
 void InstanceOptions::on_environmentVariablesTableWidget_itemChanged(
     QTableWidgetItem *item) {
-    changed=true;
+    changed = true;
     cfg.modifyEnvironmentVariable(item->row(), item->text());
 }
 
@@ -100,7 +104,6 @@ void InstanceOptions::protonVersionComboBoxIndexChanged(int index) {
 }
 void InstanceOptions::steamRuntimeComboBoxIndexChanged(int index) {
     changed = true;
-    cfg.setSteamRuntimeVersion(static_cast<LigmaCore::SteamRuntimeVersion>(index));
+    cfg.setSteamRuntimeVersion(
+        static_cast<LigmaCore::SteamRuntimeVersion>(index));
 }
-
-

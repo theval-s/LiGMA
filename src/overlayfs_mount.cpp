@@ -103,5 +103,6 @@ bool FuseOverlayFSMount::isMounted(const fs::path &dirPath) {
             "FuseOverlayFSMount::isMounted(): statfs() failed (errno: {}",
             std::strerror(errno))));
     }
+    //TODO: Check for stale mounts?
 }
 } // namespace LigmaCore

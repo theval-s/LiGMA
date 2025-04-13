@@ -34,7 +34,7 @@ std::filesystem::path LigmaCore::SteamFinder::findSteamPath() {
 std::filesystem::path
 LigmaCore::SteamFinder::findProtonPath(const ProtonVersion &version) {
     std::filesystem::path searchPath = findSteamPath();
-    searchPath = searchPath/ "steamapps"/"common";
+    searchPath = searchPath / "steamapps" / "common";
     if (std::filesystem::exists(searchPath / protonDirName[version])) {
         return searchPath / protonDirName[version] / "proton";
     } else
@@ -52,12 +52,14 @@ std::filesystem::path LigmaCore::SteamFinder::findCompatDataDir(int gameID) {
     throw std::runtime_error("SteamFinder::findCompatDataDir(): could not find "
                              "compatdata for game in Steam folder");
 }
-std::filesystem::path
-LigmaCore::SteamFinder::findSteamRuntimePath(
+std::filesystem::path LigmaCore::SteamFinder::findSteamRuntimePath(
     const SteamRuntimeVersion version) {
     if (version == None) return "";
-    std::filesystem::path searchPath = findSteamPath()/"steamapps"/"common";
-    if (std::filesystem::exists(searchPath/steamRuntimeDirName[version])) {
-        return searchPath/steamRuntimeDirName[version]/"run";
-    } else throw std::runtime_error("SteamFinder::findSteamRuntimePath: failed to find runtime of version " + std::to_string(version));
+    std::filesystem::path searchPath = findSteamPath() / "steamapps" / "common";
+    if (std::filesystem::exists(searchPath / steamRuntimeDirName[version])) {
+        return searchPath / steamRuntimeDirName[version] / "run";
+    } else
+        throw std::runtime_error("SteamFinder::findSteamRuntimePath: failed to "
+                                 "find runtime of version " +
+                                 std::to_string(version));
 }

@@ -24,7 +24,7 @@ class ProtonInstanceFilesystem final : public BaseInstanceFilesystem {
         std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
             gamePlugin);
     ~ProtonInstanceFilesystem() override {
-        if (mounted) ProtonInstanceFilesystem::unmountGameFilesystem();
+        // if (mounted) ProtonInstanceFilesystem::unmountGameFilesystem();
     }
 
     void mountGameFilesystem() override;

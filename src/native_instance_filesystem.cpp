@@ -32,7 +32,7 @@ void NativeInstanceFilesystem::addMod(const fs::path &modPath,
 
     // As of right now it's expected that mod is in the same structure that it
     // should be in _mods folder,  is WIP
-    //  TODO:: archive extraction integration
+    //  TODO::
     //         error handling (incl. check for repeated mods)
     //         proper mod structure detection
     if (destPathString[0] ==
@@ -78,7 +78,8 @@ void NativeInstanceFilesystem::runGame() {
     // mountModFilesystem();
     if (!mounted) mountGameFilesystem();
     GameLauncher::openNative(basePath / LIGMA_GAME_MERGED_DIR /
-                             gamePlugin->executableName().toStdString(), userConfig);
+                                 gamePlugin->executableName().toStdString(),
+                             userConfig);
 }
 
 void NativeInstanceFilesystem::unmountGameFilesystem() {
@@ -86,7 +87,7 @@ void NativeInstanceFilesystem::unmountGameFilesystem() {
         FuseOverlayFSMount::unmount(basePath / LIGMA_GAME_MERGED_DIR);
     } catch (const std::exception &e) {
         std::cerr << e.what();
-    } //probably should not catch exceptions here and handle them in ui
+    }
     mounted = false;
     saveState();
 }

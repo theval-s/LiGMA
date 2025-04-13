@@ -85,10 +85,11 @@ void ProtonInstanceFilesystem::addMod(const fs::path &modPath,
     if (type == ModType::Prefix) {
         modBasePath = modBasePath / LIGMA_PREFIX_MODS_DIR /
                       sanitizeForPath(modName).toStdString();
-        destPath = modBasePath / destPathResolved / sanitizeForPath(modName).toStdString();
+        destPath = modBasePath / destPathResolved /
+                   sanitizeForPath(modName).toStdString();
     } else if (type == ModType::GameRoot) {
         modBasePath = modBasePath / sanitizeForPath(modName).toStdString();
-        destPath = modBasePath/ destPathResolved;
+        destPath = modBasePath / destPathResolved;
     }
     copyMod(modPath, destPath);
     modList.emplace_back(modName, modBasePath, true, type);
@@ -101,8 +102,7 @@ void ProtonInstanceFilesystem::runGame() {
     GameLauncher::openWithProton(basePath / LIGMA_GAME_MERGED_DIR /
                                      gamePlugin->executableName().toStdString(),
                                  basePath / LIGMA_PREFIX_MERGED_DIR,
-                                 gamePlugin->gameID(),
-                                 userConfig);
+                                 gamePlugin->gameID(), userConfig);
 }
 
 //QJsonObject ProtonInstanceFilesystem::toJson() const {}

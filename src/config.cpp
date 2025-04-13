@@ -9,12 +9,12 @@
 
 namespace LigmaCore {
 void ConfigLoader::saveInstance(const fs::path &configPath,
-                                 const QJsonObject &config) {
+                                const QJsonObject &config) {
     QFile file(configPath);
     saveInstance(file, config);
 }
 void ConfigLoader::saveInstance(const QString &configPath,
-                                 const QJsonObject &config) {
+                                const QJsonObject &config) {
     QFile file(configPath);
     saveInstance(file, config);
 }
@@ -59,7 +59,8 @@ void UserConfig::updateFromJson(const QJsonObject &json) {
         useHomeIsolation = json["useHomeIsolation"].toBool();
     }
     if (json.contains("protonVersion")) {
-        protonVersion = static_cast<ProtonVersion>(json["protonVersion"].toInt());
+        protonVersion =
+            static_cast<ProtonVersion>(json["protonVersion"].toInt());
     }
     if (json.contains("environmentVariables")) {
         QJsonArray env_array = json["environmentVariables"].toArray();
@@ -68,7 +69,8 @@ void UserConfig::updateFromJson(const QJsonObject &json) {
         }
     }
     if (json.contains("steamRuntimeVersion")) {
-        steamRuntimeVersion = static_cast<SteamRuntimeVersion>(json["steamRuntimeVersion"].toInt());
+        steamRuntimeVersion = static_cast<SteamRuntimeVersion>(
+            json["steamRuntimeVersion"].toInt());
     }
 }
 
@@ -126,7 +128,7 @@ void ConfigLoader::CheckModListCorrectness(const QJsonArray &modList) {
     const std::vector<std::pair<QString, QJsonValue::Type>> required_keys = {
         {   "name", QJsonValue::String},
         {   "path", QJsonValue::String},
-        {"enabled", QJsonValue::Bool},
+        {"enabled",   QJsonValue::Bool},
         {   "type", QJsonValue::Double},
     };
     // if (modList.isEmpty()) {

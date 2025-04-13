@@ -193,8 +193,8 @@ void GameInstance::on_modPathBrowseButton_clicked() {
 }
 
 void GameInstance::on_runGameButton_clicked() {
-    try{
-    instance->runGame();
+    try {
+        instance->runGame();
     } catch (const std::exception &e) {
         QMessageBox::warning(this, "Error!", e.what());
     }

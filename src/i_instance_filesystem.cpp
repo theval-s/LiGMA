@@ -67,13 +67,11 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
     for (const auto &var : this->gamePlugin->environmentVariables()) {
         userConfig.addEnvironmentVariable(var);
     }
-
 }
 BaseInstanceFilesystem::BaseInstanceFilesystem(
     const QJsonObject &config, const fs::path &pathToConfig,
-    std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
-        plugin)
-            : gamePlugin(std::move(plugin)){
+    std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> plugin)
+    : gamePlugin(std::move(plugin)) {
     ConfigLoader::CheckCorrectness(config);
 
     instanceName = config["instanceName"].toString();
@@ -103,12 +101,14 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
     configPath = QString::fromStdString(pathToConfig);
     if (FuseOverlayFSMount::isMounted(basePath / LIGMA_GAME_MERGED_DIR)) {
         if (!mounted) {
-            std::cerr << "BaseInstanceFilesystem(): config says unmounted, but folder is mounted. Treating it as mounted...\n";
+            std::cerr << "BaseInstanceFilesystem(): config says unmounted, but "
+                         "folder is mounted. Treating it as mounted...\n";
             mounted = true;
             BaseInstanceFilesystem::saveState();
         }
     } else if (mounted) {
-        std::cerr << "BaseInstanceFilesystem(): config says mounted, but folder is unmounted. Treating it as unmounted...\n\n";
+        std::cerr << "BaseInstanceFilesystem(): config says mounted, but "
+                     "folder is unmounted. Treating it as unmounted...\n\n";
         mounted = false;
         BaseInstanceFilesystem::saveState();
     }
