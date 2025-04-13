@@ -9,22 +9,43 @@
 #include <iostream>
 
 namespace LigmaCore {
-void GameLauncher::openNative(const std::string &gamePath
-                              ,const UserConfig &cfg
-) {
-    //TODO: add steam runtime and UserConfig int
-    try {
-        QProcess process;
+void GameLauncher::openNative(const std::string &gamePath,
+                              const UserConfig &cfg) {
+    QProcess process;
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    QStringList args_list;
+
+    if (cfg.getSteamRuntimeVersion() != None) {
+        if (cfg.getSteamRuntimeVersion() != Scout &&
+            cfg.getUseHomeIsolation()) {
+            //SteamRT's home isolation is not available on 1.0 because it uses
+            //LD_PRELOAD instead of pressure_vessel
+            env.insert("PRESSURE_VESSEL_SHARE_HOME", "0");
+        }
+        process.setProgram(QString::fromStdString(SteamFinder::findSteamRuntimePath(cfg.getSteamRuntimeVersion())));
+        args_list << QString::fromStdString(gamePath);
+        //testing
+        args_list << "echo" << "1234";
+    } else {
         process.setProgram(QString::fromStdString(gamePath));
-        QStringList args_list;
-        //for (const auto &arg : args) {
-        //    args_list << arg;
-        //}
-        //process.setArguments(args_list);
-        process.startDetached();
-    } catch (const std::exception &e) {
-        std::cerr << e.what();
     }
+    process.setArguments(args_list);
+    process.setProcessEnvironment(env);
+    process.setProcessChannelMode(QProcess::MergedChannels);
+
+    //Check if process runs successfully for first .25 seconds (in case executable is not existing or smth)
+    //Should be fine for games
+    process.start();
+    process.waitForFinished(250);
+    if (process.exitCode() != 0) {
+        throw std::runtime_error(std::format("Test process \"{}\" failed: {}", process.program().toStdString(),process.errorString().toStdString()));
+    }
+    process.kill();
+    //Giving process a miniscule amount to get killed, or it will try to startDetached immediately
+    //Maybe not the best way but I don't know how to implement it without changing to non-detached processes
+    //And I want processes to be detached so you could close app
+    process.waitForFinished(5);
+    process.startDetached();
 }
 void GameLauncher::openWithProton(const std::string &gamePath,
                                   const std::string &compatDataPath,
@@ -71,26 +92,26 @@ void GameLauncher::openWithProton(const std::string &gamePath,
     for (const auto &v : cfg.getEnvironmentVariables()) {
         if (int pos = v.indexOf('='); pos > 0) {
             QString key = v.left(pos);
-            QString value = v.mid(pos+1);
+            QString value = v.mid(pos + 1);
             env.insert(key, value);
         }
     }
-    protonProcess.setProcessEnvironment(env);
-
-    // protonProcess.setProgram("env");
-    // protonProcess.startDetached();
-    try {
-        protonProcess.setProgram(
-            QString::fromStdString(SteamFinder::findProtonPath(cfg.getProtonVersion())));
-        QStringList args;
-        args << "run" << QString::fromStdString(gamePath);
-        protonProcess.setArguments(args);
-        protonProcess.startDetached();
-    } catch (const std::exception &e) {
-        std::cerr << e.what();
+    if (cfg.getUseHomeIsolation()) {
+        env.insert("PRESSURE_VESSEL_SHARE_HOME", "0");
     }
+    protonProcess.setProcessEnvironment(env);
+    protonProcess.setProcessChannelMode(QProcess::MergedChannels);
 
-    //TODO: detect preferred proton runtime from manifests
+    //Proton always uses SteamRuntime 2.0 or 3.0 so we don't have to modify anything
+    protonProcess.setProgram(QString::fromStdString(
+        SteamFinder::findProtonPath(cfg.getProtonVersion())));
+    QStringList args;
+    args << "run" << QString::fromStdString(gamePath);
+    protonProcess.setArguments(args);
+    protonProcess.startDetached();
+
+
+    //TODO:
     //      allow using Proton not from steam by supplying proton path (in app or through env)
 }
 

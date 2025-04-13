@@ -32,24 +32,26 @@ class ConfigLoader {
 };
 
 /// Class for saving variables that can be changed by user after creating instance
-///
 /// This includes:
-///
 /// custom environment variables
-///
-/// Proton version
-///
+///Proton version
 /// Using SteamRuntime home isolation
-///
-/// TODO: Using AppArmor and saving profile
 class UserConfig {
     //maybe using this as a base class and make ProtonUserConfig?
+    //also maybe I can add option of using mount instead of fuse-overlayfs, but using pkexec()?
 private:
     ProtonVersion protonVersion = Hotfix;
     bool useHomeIsolation = false;
     std::vector<QString> environmentVariables = {};
     SteamRuntimeVersion steamRuntimeVersion = None;
-public:
+
+  public:
+    SteamRuntimeVersion getSteamRuntimeVersion() const {
+        return steamRuntimeVersion;
+    }
+    void setSteamRuntimeVersion(SteamRuntimeVersion steam_runtime_version) {
+        steamRuntimeVersion = steam_runtime_version;
+    }
     UserConfig() = default;
     void setProtonVersion(const ProtonVersion proton_version) {
         protonVersion = proton_version;
@@ -109,6 +111,6 @@ public:
  *  optional values:
  *  "protonVersion" - if it's different than Hotfix
  *  "environmentVariables"{} - if there are any (including plugin listed ones)
- *  "useSteamRuntime" - 1, 2, 3 - corresponding to version
+ *  "steamRuntimeVersion" - 1, 2, 3 - corresponding to version
  *  "useHomeIsolation" - if it's true
  */

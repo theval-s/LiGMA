@@ -48,6 +48,9 @@ QJsonObject UserConfig::toJson() const {
         }
         config["environmentVariables"] = env_array;
     }
+    if (steamRuntimeVersion != None) {
+        config["steamRuntimeVersion"] = steamRuntimeVersion;
+    }
     return config;
 }
 void UserConfig::updateFromJson(const QJsonObject &json) {
@@ -63,6 +66,9 @@ void UserConfig::updateFromJson(const QJsonObject &json) {
         for (int i = 0; i < env_array.size(); i++) {
             environmentVariables.emplace_back(env_array[i].toString());
         }
+    }
+    if (json.contains("steamRuntimeVersion")) {
+        steamRuntimeVersion = static_cast<SteamRuntimeVersion>(json["steamRuntimeVersion"].toInt());
     }
 }
 
@@ -146,7 +152,6 @@ void ConfigLoader::CheckModListCorrectness(const QJsonArray &modList) {
 
 std::vector<std::string> ConfigLoader::getSavedInstanceNames() {
     std::vector<std::string> result;
-    // maybe using some env variable to store path to config?
     fs::path configPath = getConfigPath();
     for (const auto &file : fs::directory_iterator(configPath)) {
         if (file.is_regular_file() && file.path().extension() == ".json") {

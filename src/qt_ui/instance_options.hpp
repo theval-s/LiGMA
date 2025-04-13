@@ -30,9 +30,11 @@ class InstanceOptions : public QDialog {
 
     void fillEnvironmentVariablesTable();
     void fillProtonComboBox();
+    void fillSteamRuntimeComboBox();
   private slots:
     void protonVersionComboBoxIndexChanged(int index);
-
+    void steamRuntimeComboBoxIndexChanged(int index);
+    //Auto MOC slots
     void on_useHomeIsolationCheckBox_stateChanged(int state);
     void on_addVariableButton_clicked();
     void on_environmentVariablesTableWidget_itemSelectionChanged();

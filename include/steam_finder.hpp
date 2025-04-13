@@ -33,9 +33,17 @@ inline std::map<ProtonVersion, std::string> protonDirName = {
     {      ProtonVersion::Hotfix,         "Proton Hotfix"},
     {ProtonVersion::Experimental, "Proton - Experimental"},
 };
+
+inline std::map<SteamRuntimeVersion, std::string> steamRuntimeDirName = {
+    {None, ""},
+    {Scout, "SteamLinuxRuntime"},
+    {Soldier, "SteamLinuxRuntime_soldier"},
+    {Sniper, "SteamLinuxRuntime_sniper"}
+};
 std::filesystem::path findSteamPath();
 std::filesystem::path
 findProtonPath(const ProtonVersion &version = ProtonVersion::Hotfix);
 std::filesystem::path findCompatDataDir(int gameID);
+std::filesystem::path findSteamRuntimePath(SteamRuntimeVersion version);
 } //namespace SteamFinder
 } // namespace LigmaCore

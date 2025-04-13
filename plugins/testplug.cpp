@@ -4,7 +4,7 @@
 #include <vector>
 
 QString LigmaTest::pluginUUID() const {
-    return "7734463d-9fea-4d46-a8cc-e8265cbe46b2";
+    return "fec5d0ce-1dff-4af8-8a59-d39cf9ccbb8a";
 }
 QString LigmaTest::gameName() const {
     return "TestPlug";

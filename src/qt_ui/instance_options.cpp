@@ -25,7 +25,9 @@ InstanceOptions::InstanceOptions(LigmaCore::UserConfig &cfg,
         connect(ui->protonVersionComboBox, &QComboBox::currentIndexChanged, this, &InstanceOptions::protonVersionComboBoxIndexChanged);
     }
     fillEnvironmentVariablesTable();
-    ui->steamRuntimeComboBox->addItem("NOT IMPLEMENTED");
+    fillSteamRuntimeComboBox();
+    connect(ui->steamRuntimeComboBox, &QComboBox::currentIndexChanged, this, &InstanceOptions::steamRuntimeComboBoxIndexChanged);
+
 }
 
 InstanceOptions::~InstanceOptions() {
@@ -42,9 +44,17 @@ void InstanceOptions::fillEnvironmentVariablesTable() {
 }
 void InstanceOptions::fillProtonComboBox() {
     for (const auto &entry : LigmaCore::SteamFinder::protonDirName) {
-        ui->protonVersionComboBox->addItem(QString::fromStdString(entry.second));
+        ui->protonVersionComboBox->addItem(
+            QString::fromStdString(entry.second));
     }
     ui->protonVersionComboBox->setCurrentIndex(cfg.getProtonVersion());
+}
+void InstanceOptions::fillSteamRuntimeComboBox() {
+    ui->steamRuntimeComboBox->addItem("Not using");
+    ui->steamRuntimeComboBox->addItem("Scout (1.0)");
+    ui->steamRuntimeComboBox->addItem("Sniper (2.0)");
+    ui->steamRuntimeComboBox->addItem("Soldier (3.0)");
+    ui->steamRuntimeComboBox->setCurrentIndex(cfg.getSteamRuntimeVersion());
 }
 void InstanceOptions::on_useHomeIsolationCheckBox_stateChanged(int state) {
     changed=true;
@@ -84,9 +94,13 @@ void InstanceOptions::on_environmentVariablesTableWidget_itemChanged(
     cfg.modifyEnvironmentVariable(item->row(), item->text());
 }
 
-void InstanceOptions::protonVersionComboBoxIndexChanged(int index){
-    changed=true;
+void InstanceOptions::protonVersionComboBoxIndexChanged(int index) {
+    changed = true;
     cfg.setProtonVersion(static_cast<LigmaCore::ProtonVersion>(index));
+}
+void InstanceOptions::steamRuntimeComboBoxIndexChanged(int index) {
+    changed = true;
+    cfg.setSteamRuntimeVersion(static_cast<LigmaCore::SteamRuntimeVersion>(index));
 }
 
 
