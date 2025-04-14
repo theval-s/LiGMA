@@ -78,17 +78,6 @@ void GameLauncher::openWithProton(const std::string &gamePath,
     // I got this by setting "echo '%command%' > filename" in steam game launch options
     // So maybe launching with steam-launch-wrapper would correctly launch with SteamOverlay?
 
-    //TODO: add steam runtime
-    env.insert("STEAM_COMPAT_DATA_PATH",
-               QString::fromStdString(compatDataPath));
-    env.insert("STEAM_COMPAT_CLIENT_INSTALL_PATH",
-               QString::fromStdString(SteamFinder::findSteamPath()));
-
-    if (gameID != 0) {
-        env.insert("SteamGameId", QString::number(gameID));
-        env.insert("SteamAppId", QString::number(gameID));
-    }
-
     for (const auto &v : cfg.getEnvironmentVariables()) {
         if (int pos = v.indexOf('='); pos > 0) {
             QString key = v.left(pos);
@@ -99,9 +88,23 @@ void GameLauncher::openWithProton(const std::string &gamePath,
     if (cfg.getUseHomeIsolation()) {
         env.insert("PRESSURE_VESSEL_SHARE_HOME", "0");
     }
-    protonProcess.setProcessEnvironment(env);
-    protonProcess.setProcessChannelMode(QProcess::MergedChannels);
+    env.insert("STEAM_COMPAT_DATA_PATH",
+               QString::fromStdString(compatDataPath));
+    env.insert("STEAM_COMPAT_CLIENT_INSTALL_PATH",
+               QString::fromStdString(SteamFinder::findSteamPath()));
 
+    if (gameID != 0) {
+        env.insert("SteamGameId", QString::number(gameID));
+        env.insert("SteamAppId", QString::number(gameID));
+    }
+    qDebug() << "Setting the following environment variables for process:";
+    for (const auto &v : env.toStringList()) {
+        qDebug() << v;
+        //this includes already existing env variables so
+    }
+
+    protonProcess.setProcessEnvironment(env);
+    //protonProcess.setProcessChannelMode(QProcess::MergedChannels);
     //Proton always uses SteamRuntime 2.0 or 3.0 so we don't have to modify anything
     protonProcess.setProgram(QString::fromStdString(
         SteamFinder::findProtonPath(cfg.getProtonVersion())));
