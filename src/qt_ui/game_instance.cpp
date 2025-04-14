@@ -180,6 +180,8 @@ void GameInstance::on_addModButton_clicked() {
         } catch (const std::exception &e) {
             QMessageBox::critical(this, "Error", e.what());
         }
+        ui->TEMP_modPathLineEdit->setText("");
+        ui->modNameLineEdit->setText("");
         refreshUI();
     }
 }
