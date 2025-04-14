@@ -49,7 +49,10 @@ class IInstanceFilesystem {
     /// @param destPathString Destination where in game root mod should be placed if it's not properly structured by itself
     virtual void addMod(const fs::path &modPath, const QString &modName,
                         const QString &destPathString) = 0;
-    virtual void removeMod(const size_t &id) = 0;
+
+    /// @brief Deletes mod files and removes mod at id pos from modList
+    /// @param id the index of mod in modList to remove
+    virtual void removeMod(const int id) = 0;
 
     /// @brief Saves instance state into corresponding config file
     virtual void saveState() const = 0;
@@ -58,31 +61,34 @@ class IInstanceFilesystem {
     /// Mounts fuse-overlayfs if it's not mounted, and then opens the game
     virtual void runGame() = 0;
 
+    /// @brief Returns mod installation paths from plugin
+    [[nodiscard]] virtual std::vector<QString> getModPaths() const = 0;
+
     virtual bool isMounted() const = 0;
     [[nodiscard]] virtual QJsonObject toJson() const = 0;
     [[nodiscard]] virtual QString getInstanceName() const = 0;
     [[nodiscard]] virtual std::vector<ModInfo> getModList() const = 0;
     virtual void setModList(const std::vector<ModInfo> &) = 0;
-    [[nodiscard]] virtual std::vector<QString> getModPaths() const = 0;
     [[nodiscard]] virtual UserConfig &getUserConfigRef() = 0;
     virtual bool isUsingProton() const = 0;
+
+
 };
 
 class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
   protected:
-    fs::path basePath;
-    fs::path gamePath;
-    QString instanceName;
-    QString pluginUUID;
+    fs::path m_basePath;
+    fs::path m_gamePath;
+    QString m_instanceName;
+    UserConfig m_userConfig;
+    std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> m_gamePlugin;
+    bool m_mounted = false;
+    std::vector<ModInfo> m_modList;
+
     //! @brief Path to config file for that specific instance, ending with .json
-    QString configPath;
-    UserConfig userConfig;
-    std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> gamePlugin;
-    bool mounted = false;
+    QString m_configPath;
 
-    std::vector<ModInfo> modList;
     static QString resolveMacros(const QString &);
-
     void copyMod(const QDir &modPath, const QDir &destPath);
     void copyMod(const fs::path &modPath, const fs::path &destPath);
 
@@ -107,56 +113,49 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     /// @param gamePlugin Pointer to plugin associated with the game
     BaseInstanceFilesystem(
         const QString &instanceName, const fs::path &basePath,
-        const fs::path &gamePath,
+        fs::path gamePath,
         std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
             gamePlugin);
+
     /// @brief Creates instance from saved config
     /// @param config Configuration stored in Json
     /// @param pathToConfig Path to the file that has saved config
     /// @param gamePlugin Pointer to plugin associated with the game
-    // or maybe just make it construct from path and getting json in
-    // initialization?
     BaseInstanceFilesystem(
         const QJsonObject &config, const fs::path &pathToConfig,
         std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
             gamePlugin);
 
-    //virtual void mountGameFilesystem() = 0;
-    //virtual void unmountGameFilesystem() = 0;
-    //virtual void runGame() = 0;
-
-    //virtual void addMod(const fs::path &modPath, const fs::path &modName, const QString &destPathString) = 0;
-    void removeMod(const size_t &id) override;
+    void removeMod(const int id) override;
     void saveState() const override {
-        ConfigLoader::saveInstance(configPath, this->toJson());
+        ConfigLoader::saveInstance(m_configPath, this->toJson());
     }
 
-    bool isMounted() const override { return mounted; }
+    bool isMounted() const override { return m_mounted; }
     [[nodiscard]] QJsonObject toJson() const override;
     [[nodiscard]] QString getInstanceName() const override {
-        return instanceName;
+        return m_instanceName;
     }
     [[nodiscard]] std::vector<ModInfo> getModList() const override {
-        return modList;
+        return m_modList;
     }
     void setModList(const std::vector<ModInfo> &newList) override {
         //TODO: figure out a way to implement order swapping in Qt
-        modList = newList;
+        m_modList = newList;
     }
     [[nodiscard]] std::vector<QString> getModPaths() const override {
-        std::vector<QString> paths = gamePlugin->modPaths();
+        std::vector<QString> paths = m_gamePlugin->modPaths();
         paths.insert(paths.begin(), "Game root");
         return paths;
     }
+    [[nodiscard]] UserConfig &getUserConfigRef() override { return m_userConfig; }
+    bool isUsingProton() const override { return m_gamePlugin->usesProton(); }
 
     /// @brief Returns string for use in overlayfs mounting
     /// Gets all mod dirs from modList with specified type and returns a string with format
     /// dir1:dir2:...:dirn. Need to add game path or prefix path after this.
     /// @param type ModType::GameRoot or ModType::Prefix
     [[nodiscard]] QString getModsLowerDirsString(const ModType &type) const;
-
-    [[nodiscard]] UserConfig &getUserConfigRef() override { return userConfig; }
-    bool isUsingProton() const override { return gamePlugin->usesProton(); }
 };
 
 } // namespace LigmaCore

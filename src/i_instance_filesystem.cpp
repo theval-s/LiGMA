@@ -14,6 +14,7 @@
 #include <QString>
 #include <filesystem>
 #include <iostream>
+#include <utility>
 
 namespace LigmaCore {
 
@@ -41,17 +42,17 @@ QString BaseInstanceFilesystem::resolveMacros(const QString &input) {
 //TODO: rewrite/add constructors from QDir, QString
 BaseInstanceFilesystem::BaseInstanceFilesystem(
     const QString &instanceName, const fs::path &basePath,
-    const fs::path &gamePath,
+    fs::path gamePath,
     std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> gamePlugin)
-    : basePath(basePath), gamePath(gamePath), instanceName(instanceName),
-      configPath(ConfigLoader::getConfigPathQString() +
+    : m_basePath(basePath), m_gamePath(std::move(gamePath)), m_instanceName(instanceName),
+      m_configPath(ConfigLoader::getConfigPathQString() +
                  (sanitizeForPath(instanceName) + ".json")),
-      gamePlugin(std::move(gamePlugin)) {
+      m_gamePlugin(std::move(gamePlugin)) {
     // TODO: check if gamePath has gameExeName
     //       error handling
     //       check if plugin is appropriate?
-    this->pluginUUID = this->gamePlugin->pluginUUID();
-    if (this->pluginUUID.isEmpty()) {
+
+    if (m_gamePlugin->pluginUUID().isEmpty()) {
         throw std::runtime_error(
             "BaseInstanceFilesystem(): Failed to get UUID from plugin");
     }
@@ -64,52 +65,51 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
     fs::create_directory(basePath / LIGMA_MOD_FILES_DIR);
     //TODO: add logging
 
-    for (const auto &var : this->gamePlugin->environmentVariables()) {
-        userConfig.addEnvironmentVariable(var);
+    for (const auto &var : m_gamePlugin->environmentVariables()) {
+        m_userConfig.addEnvironmentVariable(var);
     }
 }
 BaseInstanceFilesystem::BaseInstanceFilesystem(
     const QJsonObject &config, const fs::path &pathToConfig,
     std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>> plugin)
-    : gamePlugin(std::move(plugin)) {
+    : m_gamePlugin(std::move(plugin)) {
     ConfigLoader::CheckCorrectness(config);
 
-    instanceName = config["instanceName"].toString();
-    basePath = config["basePath"].toString().toStdString();
-    gamePath = config["gamePath"].toString().toStdString();
-    pluginUUID = config["pluginUUID"].toString();
-    mounted = config["mounted"].toBool();
+    m_instanceName = config["instanceName"].toString();
+    m_basePath = config["basePath"].toString().toStdString();
+    m_gamePath = config["gamePath"].toString().toStdString();
+    QString pluginUUID = config["pluginUUID"].toString();
+    m_mounted = config["mounted"].toBool();
     QJsonArray mod_list_array = config["modList"].toArray();
-    if (pluginUUID != gamePlugin->pluginUUID()) {
+    if (pluginUUID != m_gamePlugin->pluginUUID()) {
         throw std::runtime_error(
             "BaseInstanceFilesystem(): UUID in supplied plugin and supplied "
             "config file are different");
     }
-    //TODO: Make UserConfig from json
 
     ConfigLoader::CheckModListCorrectness(mod_list_array);
 
     for (auto iter = mod_list_array.begin(); iter != mod_list_array.end();
          ++iter) {
         QJsonObject mod_obj = iter->toObject();
-        modList.emplace_back(mod_obj["name"].toString(),
+        m_modList.emplace_back(mod_obj["name"].toString(),
                              fs::path(mod_obj["path"].toString().toStdString()),
                              mod_obj["enabled"].toBool(),
                              static_cast<ModType>(mod_obj["type"].toInt()));
     }
-    userConfig.updateFromJson(config);
-    configPath = QString::fromStdString(pathToConfig);
-    if (FuseOverlayFSMount::isMounted(basePath / LIGMA_GAME_MERGED_DIR)) {
-        if (!mounted) {
+    m_userConfig.updateFromJson(config);
+    m_configPath = QString::fromStdString(pathToConfig);
+    if (FuseOverlayFSMount::isMounted(m_basePath / LIGMA_GAME_MERGED_DIR)) {
+        if (!m_mounted) {
             std::cerr << "BaseInstanceFilesystem(): config says unmounted, but "
-                         "folder is mounted. Treating it as mounted...\n";
-            mounted = true;
+                         "folder is m_mounted. Treating it as m_mounted...\n";
+            m_mounted = true;
             BaseInstanceFilesystem::saveState();
         }
-    } else if (mounted) {
-        std::cerr << "BaseInstanceFilesystem(): config says mounted, but "
+    } else if (m_mounted) {
+        std::cerr << "BaseInstanceFilesystem(): config says m_mounted, but "
                      "folder is unmounted. Treating it as unmounted...\n\n";
-        mounted = false;
+        m_mounted = false;
         BaseInstanceFilesystem::saveState();
     }
 }
@@ -121,7 +121,7 @@ void BaseInstanceFilesystem::copyMod(const QDir &modPath,
 }
 void BaseInstanceFilesystem::copyMod(const fs::path &modPath,
                                      const fs::path &destPath) {
-    if (mounted) unmountGameFilesystem();
+    if (m_mounted) unmountGameFilesystem();
 
     //TODO: probably rewrite to QDir
     fs::create_directories(destPath);
@@ -154,24 +154,24 @@ void BaseInstanceFilesystem::copyMod(const fs::path &modPath,
 
 void BaseInstanceFilesystem::cleanState() {
     //Maybe list all files to be deleted before actually deleting?
-    if (mounted) unmountGameFilesystem();
+    if (m_mounted) unmountGameFilesystem();
     std::cerr << std::format("InstanceFilesystem::cleanState() with base path "
                              "<{}> removed {} files\n",
-                             basePath.string(), fs::remove_all(basePath));
-    fs::remove(configPath.toStdString());
+                             m_basePath.string(), fs::remove_all(m_basePath));
+    fs::remove(m_configPath.toStdString());
 }
 
-void BaseInstanceFilesystem::removeMod(const size_t &id) {
-    if (mounted) unmountGameFilesystem();
+void BaseInstanceFilesystem::removeMod(const int id) {
+    if (m_mounted) unmountGameFilesystem();
 
-    fs::remove_all(modList[id].path);
-    modList.erase(modList.begin() + id);
+    fs::remove_all(m_modList[id].path);
+    m_modList.erase(m_modList.begin() + id);
     saveState();
 }
 
 QJsonObject BaseInstanceFilesystem::toJson() const {
     QJsonArray mods_array;
-    for (const auto &[mod_name, mod_path, mod_enabled, mod_type] : modList) {
+    for (const auto &[mod_name, mod_path, mod_enabled, mod_type] : m_modList) {
         QJsonObject mod_object;
         mod_object["name"] = mod_name;
         mod_object["path"] = QString::fromStdString(mod_path);
@@ -181,14 +181,14 @@ QJsonObject BaseInstanceFilesystem::toJson() const {
         mods_array.append(mod_object);
     }
     QJsonObject obj = {
-        {"instanceName",                     instanceName},
-        {  "pluginUUID",                       pluginUUID},
-        {    "basePath", QString::fromStdString(basePath)},
-        {    "gamePath", QString::fromStdString(gamePath)},
-        {     "mounted",              QJsonValue(mounted)},
+        {"instanceName",                     m_instanceName},
+        {  "pluginUUID",                       m_gamePlugin->pluginUUID()},
+        {    "basePath", QString::fromStdString(m_basePath)},
+        {    "gamePath", QString::fromStdString(m_gamePath)},
+        {     "mounted",              QJsonValue(m_mounted)},
         {     "modList",                       mods_array},
     };
-    QJsonObject user_json = userConfig.toJson();
+    QJsonObject user_json = m_userConfig.toJson();
     for (auto it = user_json.begin(); it != user_json.end(); ++it) {
         obj.insert(it.key(), it.value());
     }
@@ -200,10 +200,10 @@ BaseInstanceFilesystem::getModsLowerDirsString(const ModType &type) const {
     QString mod_folders;
     // mod_folders += '"';
     // QProcess automatically escapes with quotes if needed
-    for (const auto &mod : modList) {
+    for (const auto &mod : m_modList) {
         if (mod.type == type) mod_folders += mod.path.string() + ":";
     }
-    //mod_folders += gamePath.path();
+    //mod_folders += m_gamePath.path();
     return mod_folders;
 }
 

@@ -48,25 +48,25 @@ void NativeInstanceFilesystem::addMod(const fs::path &modPath,
             "$PREFIX or 'drive_c', suggesting it's for a proton prefix, but "
             "this instance is native");
     }
-    fs::path destPath = basePath / LIGMA_MOD_FILES_DIR /
+    fs::path destPath = m_basePath / LIGMA_MOD_FILES_DIR /
                         sanitizeForPath(modName).toStdString() /
                         destPathString.toStdString();
     copyMod(modPath, destPath);
-    modList.emplace_back(modName, destPath, true, ModType::GameRoot);
+    m_modList.emplace_back(modName, destPath, true, ModType::GameRoot);
     saveState();
     // TODO:: more error handling
 }
 
 void NativeInstanceFilesystem::mountGameFilesystem() {
     // TODO: error handling
-    if (mounted) return;
+    if (m_mounted) return;
     try {
         QString lower_dirs = getModsLowerDirsString(ModType::GameRoot);
-        lower_dirs += gamePath.string();
+        lower_dirs += m_gamePath.string();
         FuseOverlayFSMount::mount(
-            basePath / LIGMA_GAME_MERGED_DIR, lower_dirs.toStdString(),
-            basePath / LIGMA_GAME_UPPER_DIR, basePath / LIGMA_GAME_WORK_DIR);
-        mounted = true;
+            m_basePath / LIGMA_GAME_MERGED_DIR, lower_dirs.toStdString(),
+            m_basePath / LIGMA_GAME_UPPER_DIR, m_basePath / LIGMA_GAME_WORK_DIR);
+        m_mounted = true;
         saveState();
     } catch (const std::exception &e) {
         std::cerr << e.what();
@@ -76,19 +76,19 @@ void NativeInstanceFilesystem::mountGameFilesystem() {
 // As of right now in UI I handle this with QProcess::start()
 void NativeInstanceFilesystem::runGame() {
     // mountModFilesystem();
-    if (!mounted) mountGameFilesystem();
-    GameLauncher::openNative(basePath / LIGMA_GAME_MERGED_DIR /
-                                 gamePlugin->executableName().toStdString(),
-                             userConfig);
+    if (!m_mounted) mountGameFilesystem();
+    GameLauncher::openNative(m_basePath / LIGMA_GAME_MERGED_DIR /
+                                 m_gamePlugin->executableName().toStdString(),
+                             m_userConfig);
 }
 
 void NativeInstanceFilesystem::unmountGameFilesystem() {
     try {
-        FuseOverlayFSMount::unmount(basePath / LIGMA_GAME_MERGED_DIR);
+        FuseOverlayFSMount::unmount(m_basePath / LIGMA_GAME_MERGED_DIR);
     } catch (const std::exception &e) {
         std::cerr << e.what();
     }
-    mounted = false;
+    m_mounted = false;
     saveState();
 }
 

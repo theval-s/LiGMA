@@ -18,7 +18,7 @@ ProtonInstanceFilesystem::ProtonInstanceFilesystem(
     : BaseInstanceFilesystem(instanceName, basePath, gamePath,
                              std::move(gamePlugin)) {
 
-    //gamePlugin->initializeModState((basePath / UPPER_DIR).string());
+    //m_gamePlugin->initializeModState((m_basePath / UPPER_DIR).string());
     fs::create_directory(basePath / LIGMA_MOD_FILES_DIR / LIGMA_PREFIX_MODS_DIR,
                          basePath);
     fs::create_directory(basePath / LIGMA_PREFIX_WORK_DIR, basePath);
@@ -32,21 +32,21 @@ ProtonInstanceFilesystem::ProtonInstanceFilesystem(
     : BaseInstanceFilesystem(config, pathToConfig, std::move(gamePlugin)) {}
 
 void ProtonInstanceFilesystem::mountGameFilesystem() {
-    if (mounted) return;
+    if (m_mounted) return;
     try {
         QString lower_dirs = getModsLowerDirsString(ModType::GameRoot);
-        lower_dirs += gamePath.string();
+        lower_dirs += m_gamePath.string();
         FuseOverlayFSMount::mount(
-            basePath / LIGMA_GAME_MERGED_DIR, lower_dirs.toStdString(),
-            basePath / LIGMA_GAME_UPPER_DIR, basePath / LIGMA_GAME_WORK_DIR);
+            m_basePath / LIGMA_GAME_MERGED_DIR, lower_dirs.toStdString(),
+            m_basePath / LIGMA_GAME_UPPER_DIR, m_basePath / LIGMA_GAME_WORK_DIR);
         lower_dirs = getModsLowerDirsString(ModType::Prefix);
         lower_dirs +=
-            SteamFinder::findCompatDataDir(gamePlugin->gameID()).string();
-        FuseOverlayFSMount::mount(basePath / LIGMA_PREFIX_MERGED_DIR,
+            SteamFinder::findCompatDataDir(m_gamePlugin->gameID()).string();
+        FuseOverlayFSMount::mount(m_basePath / LIGMA_PREFIX_MERGED_DIR,
                                   lower_dirs.toStdString(),
-                                  (basePath / LIGMA_PREFIX_UPPER_DIR).string(),
-                                  basePath / LIGMA_PREFIX_WORK_DIR);
-        mounted = true;
+                                  (m_basePath / LIGMA_PREFIX_UPPER_DIR).string(),
+                                  m_basePath / LIGMA_PREFIX_WORK_DIR);
+        m_mounted = true;
         saveState();
 
     } catch (const std::exception &e) {
@@ -55,11 +55,11 @@ void ProtonInstanceFilesystem::mountGameFilesystem() {
 }
 
 void ProtonInstanceFilesystem::unmountGameFilesystem() {
-    if (!mounted) return;
+    if (!m_mounted) return;
     try {
-        FuseOverlayFSMount::unmount(basePath / LIGMA_GAME_MERGED_DIR);
-        FuseOverlayFSMount::unmount(basePath / LIGMA_PREFIX_MERGED_DIR);
-        mounted = false;
+        FuseOverlayFSMount::unmount(m_basePath / LIGMA_GAME_MERGED_DIR);
+        FuseOverlayFSMount::unmount(m_basePath / LIGMA_PREFIX_MERGED_DIR);
+        m_mounted = false;
         saveState();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
@@ -80,7 +80,7 @@ void ProtonInstanceFilesystem::addMod(const fs::path &modPath,
                              : ModType::GameRoot;
     fs::path destPathResolved = resolveMacros(destPathString).toStdString();
     //we get string like: /home/user/ or pfx
-    fs::path modBasePath = basePath / LIGMA_MOD_FILES_DIR;
+    fs::path modBasePath = m_basePath / LIGMA_MOD_FILES_DIR;
     fs::path destPath;
     if (type == ModType::Prefix) {
         modBasePath = modBasePath / LIGMA_PREFIX_MODS_DIR /
@@ -92,19 +92,17 @@ void ProtonInstanceFilesystem::addMod(const fs::path &modPath,
         destPath = modBasePath / destPathResolved;
     }
     copyMod(modPath, destPath);
-    modList.emplace_back(modName, modBasePath, true, type);
+    m_modList.emplace_back(modName, modBasePath, true, type);
     saveState();
     //copyMod throws exceptions, so if we're here then it succeded
     //TODO: add checking of modPath structure
 }
 void ProtonInstanceFilesystem::runGame() {
-    if (!mounted) mountGameFilesystem();
-    GameLauncher::openWithProton(basePath / LIGMA_GAME_MERGED_DIR /
-                                     gamePlugin->executableName().toStdString(),
-                                 basePath / LIGMA_PREFIX_MERGED_DIR,
-                                 gamePlugin->gameID(), userConfig);
+    if (!m_mounted) mountGameFilesystem();
+    GameLauncher::openWithProton(m_basePath / LIGMA_GAME_MERGED_DIR /
+                                     m_gamePlugin->executableName().toStdString(),
+                                 m_basePath / LIGMA_PREFIX_MERGED_DIR,
+                                 m_gamePlugin->gameID(), m_userConfig);
 }
-
-//QJsonObject ProtonInstanceFilesystem::toJson() const {}
 
 } // namespace LigmaCore
