@@ -101,6 +101,7 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     BaseInstanceFilesystem() = delete;
     BaseInstanceFilesystem(const BaseInstanceFilesystem &) = delete;
     BaseInstanceFilesystem &operator=(const BaseInstanceFilesystem &) = delete;
+    ~BaseInstanceFilesystem() override = default;
     //BaseInstanceFilesystem(BaseInstanceFilesystem &&) = default;
     //BaseInstanceFilesystem &operator=(BaseInstanceFilesystem &&) = default;
 

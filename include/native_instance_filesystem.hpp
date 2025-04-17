@@ -21,10 +21,7 @@ class NativeInstanceFilesystem : public BaseInstanceFilesystem {
         const QJsonObject &config, const fs::path &pathToConfig,
         std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
             gamePlugin);
-    ~NativeInstanceFilesystem() override {
-        // std::cerr << "InstanceFilesystem deconstructed\n";
-        // if (m_mounted) NativeInstanceFilesystem::unmountGameFilesystem();
-    }
+    ~NativeInstanceFilesystem() override = default;
 
     void mountGameFilesystem() override;
     void unmountGameFilesystem() override;

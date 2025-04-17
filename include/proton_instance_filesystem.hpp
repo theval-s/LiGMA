@@ -23,9 +23,7 @@ class ProtonInstanceFilesystem final : public BaseInstanceFilesystem {
         const QJsonObject &config, const fs::path &pathToConfig,
         std::unique_ptr<LigmaPlugin, std::function<void(LigmaPlugin *)>>
             gamePlugin);
-    ~ProtonInstanceFilesystem() override {
-        // if (m_mounted) ProtonInstanceFilesystem::unmountGameFilesystem();
-    }
+    ~ProtonInstanceFilesystem() override = default;
 
     void mountGameFilesystem() override;
     void unmountGameFilesystem() override;

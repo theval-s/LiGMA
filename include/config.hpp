@@ -62,6 +62,10 @@ class UserConfig {
     void addEnvironmentVariable(const QString &variable) {
         environmentVariables.push_back(variable);
     }
+    void removeEnvironmentVariable(int index) {
+        if (index < 0 || index >= environmentVariables.size()) { return; }
+        environmentVariables.erase(environmentVariables.begin() + index);
+    }
     void modifyEnvironmentVariable(const int index, const QString &newValue) {
         if (index < 0 && index > environmentVariables.size()) {
             return;

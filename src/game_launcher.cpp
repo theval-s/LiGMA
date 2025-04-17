@@ -100,11 +100,9 @@ void GameLauncher::openWithProton(const std::string &gamePath,
     qDebug() << "Setting the following environment variables for process:";
     for (const auto &v : env.toStringList()) {
         qDebug() << v;
-        //this includes already existing env variables so
     }
 
     protonProcess.setProcessEnvironment(env);
-    //protonProcess.setProcessChannelMode(QProcess::MergedChannels);
     //Proton always uses SteamRuntime 2.0 or 3.0 so we don't have to modify anything
     protonProcess.setProgram(QString::fromStdString(
         SteamFinder::findProtonPath(cfg.getProtonVersion())));

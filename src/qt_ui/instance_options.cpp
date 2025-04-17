@@ -18,15 +18,16 @@ InstanceOptions::InstanceOptions(LigmaCore::UserConfig &cfg,
     if (!usesProton) {
         ui->protonVersionComboBox->setDisabled(true);
         ui->useHomeIsolationCheckBox->setDisabled(true);
+        fillSteamRuntimeComboBox();
     } else {
         ui->useHomeIsolationCheckBox->setChecked(cfg.getUseHomeIsolation());
         fillProtonComboBox();
         //Connect after filling to not trigger on initial index change
         connect(ui->protonVersionComboBox, &QComboBox::currentIndexChanged,
                 this, &InstanceOptions::protonVersionComboBoxIndexChanged);
+        ui->steamRuntimeComboBox->setDisabled(true);
     }
     fillEnvironmentVariablesTable();
-    fillSteamRuntimeComboBox();
     connect(ui->steamRuntimeComboBox, &QComboBox::currentIndexChanged, this,
             &InstanceOptions::steamRuntimeComboBoxIndexChanged);
 }
@@ -86,9 +87,10 @@ void InstanceOptions::on_removeVariableButton_clicked() {
     if (!ui->environmentVariablesTableWidget->selectionModel()->hasSelection())
         return;
     else {
+        cfg.removeEnvironmentVariable(ui->environmentVariablesTableWidget->currentIndex().row());
         ui->environmentVariablesTableWidget->removeRow(
             ui->environmentVariablesTableWidget->currentIndex().row());
-        //TODO: Remove from cfg
+        changed = true;
     }
 }
 
