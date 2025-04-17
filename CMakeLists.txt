@@ -30,10 +30,11 @@ set(MAIN_UI_SOURCES
         src/qt_ui/new_instance_dialog.cpp
         src/qt_ui/game_instance.cpp
         src/qt_ui/instance_options.cpp
+        src/qt_ui/add_mod_dialog.cpp
 )
 
 add_executable(main ${MAIN_SOURCES} ${MAIN_UI_SOURCES})
-target_include_directories(main PRIVATE include include/qt_ui)
+target_include_directories(main PRIVATE include)
 target_link_libraries(main PUBLIC Qt6::Widgets Qt6::Core)
 #target_link_libraries(main PRIVATE LibArchive::LibArchive)
 qt_finalize_executable(main)

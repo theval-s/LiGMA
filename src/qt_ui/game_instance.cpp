@@ -1,5 +1,6 @@
 #include "game_instance.hpp"
 
+#include "add_mod_dialog.hpp"
 #include "instance_options.hpp"
 #include "ui_game_instance.h"
 
@@ -12,6 +13,7 @@
 #include <instance_factory.hpp>
 #include <memory>
 #include <qstandarditemmodel.h>
+#include <ui_add_mod_dialog.h>
 
 bool ModTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
                                  int row, int column,
@@ -118,14 +120,6 @@ void GameInstance::updateModList() {
     refreshUI();
 }
 
-void GameInstance::validateInputs() {
-    if (!ui->TEMP_modPathLineEdit->text().isEmpty() &&
-        !ui->modNameLineEdit->text().isEmpty()) {
-        ui->addModButton->setEnabled(true);
-    }
-    // TODO: add proper validation and highlighting what's wrong
-}
-
 void GameInstance::refreshUI() {
     refreshModList();
     if (instance->isMounted()) {
@@ -148,49 +142,15 @@ void GameInstance::selectionCheck(const QItemSelection &selected,
 
 void GameInstance::on_addModButton_clicked() {
     QString destPath;
-    QDialog dialog(this);
-    dialog.setWindowTitle("Select Mod Destination");
-    auto layout = new QVBoxLayout(&dialog);
-    auto group = new QButtonGroup(&dialog);
-    std::vector<QString> paths = instance->getModPaths();
-    int id = 0;
-    for (const auto &pathString : paths) {
-        auto *button = new QRadioButton(pathString);
-        group->addButton(button, id++);
-        layout->addWidget(button);
-    }
-    group->buttons()[0]->setChecked(true);
-    auto buttonBox = new QDialogButtonBox(
-        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-    layout->addWidget(buttonBox);
-    connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-
+    AddModDialog dialog = AddModDialog(instance->getModPaths(), this);
     if (dialog.exec() == QDialog::Accepted) {
-        std::cerr << "QDialog accepted with choice: "
-                  << paths[group->checkedId()].toStdString() << std::endl;
-        if (group->checkedId() == 0)
-            destPath = "";
-        else
-            destPath = paths[group->checkedId()];
-        //testing
         try {
-            instance->addMod(ui->TEMP_modPathLineEdit->text().toStdString(),
-                             ui->modNameLineEdit->text(), destPath);
+            instance->addMod(dialog.getModPath(),
+                             dialog.getModName(), dialog.getDestinationPath());
         } catch (const std::exception &e) {
             QMessageBox::critical(this, "Error", e.what());
         }
-        ui->TEMP_modPathLineEdit->setText("");
-        ui->modNameLineEdit->setText("");
         refreshUI();
-    }
-}
-
-void GameInstance::on_modPathBrowseButton_clicked() {
-    QString mod_path = QFileDialog::getExistingDirectory(this, "Select mod",
-                                                         QDir::home().path());
-    if (!mod_path.isEmpty()) {
-        ui->TEMP_modPathLineEdit->setText(mod_path);
     }
 }
 
@@ -237,16 +197,11 @@ void GameInstance::setupUi() {
     // ui->modTableView->dropEvent(ui->modTableView->moveEvent());
     connect(ui->refreshUiButton, &QPushButton::clicked, this,
             &GameInstance::refreshUI);
-    connect(ui->TEMP_modPathLineEdit, &QLineEdit::textChanged, this,
-            &GameInstance::validateInputs);
-    connect(ui->modNameLineEdit, &QLineEdit::textEdited, this,
-            &GameInstance::validateInputs);
     connect(ui->modTableView->selectionModel(),
             &QItemSelectionModel::selectionChanged, this,
             &GameInstance::selectionCheck);
     connect(modTableModel.get(), &ModTableModel::modOrderChanged, this,
             &GameInstance::updateModList);
-    ui->addModButton->setDisabled(true);
     ui->removeModButton->setDisabled(true);
-    ui->instanceNameLabel->setText(instance->getInstanceName());
+    this->setWindowTitle(instance->getInstanceName() + ": LiGMA Instance");
 }

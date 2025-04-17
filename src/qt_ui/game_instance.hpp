@@ -58,7 +58,6 @@ class GameInstance : public QMainWindow {
 
   private slots:
     // connectable slots
-    void validateInputs();
     void refreshUI();
     void selectionCheck(const QItemSelection &selected,
                         const QItemSelection &deselected);
@@ -66,7 +65,6 @@ class GameInstance : public QMainWindow {
 
     // Auto MOC slots
     void on_addModButton_clicked();
-    void on_modPathBrowseButton_clicked();
     void on_removeModButton_clicked();
     void on_mountGameButton_clicked();
     void on_settingsButton_clicked();
