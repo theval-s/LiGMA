@@ -38,12 +38,8 @@ In case your game also uses Proton - overlayed version of Steam's compat prefix 
 - Basic mod managing +
 - Plugins for different games +
 - UI +-
-- Properly documenting all this stuff
-- Tests
-- Security features
-    - AppArmor profiles
-    - Enforcing Steam Runtime on non-proton games (proton uses Steam Runtime by default, at least their repo says so)
-- Logging, error handling, exceptions
+- Steam Runtime, pressure_vessel home isolation +
+- Tests, logs
 
 # Current issues
 - There might be some issues with Flatpak installed Steam (not tested)
