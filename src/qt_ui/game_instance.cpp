@@ -4,11 +4,10 @@
 #include "instance_options.hpp"
 #include "ui_game_instance.h"
 
-#include <QButtonGroup>
 #include <QDialog>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QRadioButton>
+#include <QMimeData>
 #include <QTimer>
 #include <instance_factory.hpp>
 #include <memory>
@@ -27,8 +26,16 @@ bool ModTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action,
     bool result =
         QStandardItemModel::dropMimeData(data, action, row, 0, parent);
     if (result) {
-        //emit modOrderChanged();
-        QTimer::singleShot(0, this, [this]() { emit modOrderChanged(); });
+        //qDebug() << "dest row: " << row;
+        QByteArray encoded = data->data("application/x-qstandarditemmodeldatalist");
+        QDataStream stream(&encoded, QIODevice::ReadOnly);
+        int sourceRow = -1;
+        stream >> sourceRow;
+        if (sourceRow < 0) throw std::runtime_error("ModTableModel::dropMimeData: Failed to read source row");
+        //qDebug() << "sourceRow: " << sourceRow;
+
+        //emit modOrderSwapped();
+        QTimer::singleShot(0, this, [this, sourceRow, row]() { emit modOrderSwapped(sourceRow, row); });
     }
     return result;
 }
@@ -96,28 +103,15 @@ void GameInstance::refreshModList() {
         modTableModel->appendRow(row);
     }
 }
-void GameInstance::updateModList() {
-    std::vector<LigmaCore::ModInfo> new_order;
-    for (int row = 0; row < modTableModel->rowCount(); ++row) {
-        QString mod_name = modTableModel->item(row, 0)->text();
-        bool enabled = modTableModel->item(row, 1)->checkState() == Qt::Checked;
-        QString mod_path = modTableModel->item(row, 2)->text();
 
-        //This is ineffective as hell but I'm not sure how
-        //Might take a look at how MO2 does it I guess
-        for (const auto &mod : instance->getModList()) {
-            if (mod.name == mod_name) {
-                new_order.emplace_back(
-                    mod_name, std::filesystem::path(mod_path.toStdString()),
-                    enabled, mod.type);
-                break;
-            }
-        }
+void GameInstance::swapMods(int source, int dest) {
+    if (dest == modTableModel->rowCount()) {
+        instance->putToBack(source);
+    } else try {
+        instance->swapMods(source, dest);
+    } catch (const std::exception &e) {
+        QMessageBox::critical(this, "Error", e.what());
     }
-
-    instance->setModList(new_order);
-    instance->saveState();
-    refreshUI();
 }
 
 void GameInstance::refreshUI() {
@@ -138,6 +132,10 @@ void GameInstance::selectionCheck(const QItemSelection &selected,
         ui->removeModButton->setDisabled(true);
     else
         ui->removeModButton->setEnabled(true);
+}
+void GameInstance::checkedItemChanged(QStandardItem *item) {
+    if (!item->isCheckable()) return;
+    instance->setEnabled(item->row(), item->checkState() == Qt::Checked);
 }
 
 void GameInstance::on_addModButton_clicked() {
@@ -200,8 +198,16 @@ void GameInstance::setupUi() {
     connect(ui->modTableView->selectionModel(),
             &QItemSelectionModel::selectionChanged, this,
             &GameInstance::selectionCheck);
-    connect(modTableModel.get(), &ModTableModel::modOrderChanged, this,
-            &GameInstance::updateModList);
+    connect(modTableModel.get(), &ModTableModel::modOrderSwapped, this,
+            &GameInstance::swapMods);
+    connect(modTableModel.get(), &QStandardItemModel::itemChanged, this,
+        &GameInstance::checkedItemChanged);
     ui->removeModButton->setDisabled(true);
     this->setWindowTitle(instance->getInstanceName() + ": LiGMA Instance");
 }
+
+void GameInstance::on_unmountGameButton_clicked() {
+    instance->unmountGameFilesystem();
+    refreshUI();
+}
+

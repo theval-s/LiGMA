@@ -68,7 +68,9 @@ class IInstanceFilesystem {
     [[nodiscard]] virtual QJsonObject toJson() const = 0;
     [[nodiscard]] virtual QString getInstanceName() const = 0;
     [[nodiscard]] virtual std::vector<ModInfo> getModList() const = 0;
-    virtual void setModList(const std::vector<ModInfo> &) = 0;
+    virtual void swapMods(int first, int second) = 0;
+    virtual void putToBack(int index) = 0;
+    virtual void setEnabled(const int index, bool state) = 0;
     [[nodiscard]] virtual UserConfig &getUserConfigRef() = 0;
     virtual bool isUsingProton() const = 0;
 
@@ -140,9 +142,17 @@ class BaseInstanceFilesystem : public virtual IInstanceFilesystem {
     [[nodiscard]] std::vector<ModInfo> getModList() const override {
         return m_modList;
     }
-    void setModList(const std::vector<ModInfo> &newList) override {
-        //TODO: figure out a way to implement order swapping in Qt
-        m_modList = newList;
+    void swapMods(const int first,const int second) override {
+        std::swap(m_modList.at(first), m_modList.at(second));
+        if (m_mounted) unmountGameFilesystem();
+    }
+    void putToBack(const int index) override {
+        std::rotate(m_modList.begin() + index, m_modList.begin() + index + 1, m_modList.end());
+        if (m_mounted) unmountGameFilesystem();
+    }
+    void setEnabled(const int index, bool state) override {
+        if (m_mounted) unmountGameFilesystem();
+        m_modList.at(index).enabled = state;
     }
     [[nodiscard]] std::vector<QString> getModPaths() const override {
         std::vector<QString> paths = m_gamePlugin->modPaths();

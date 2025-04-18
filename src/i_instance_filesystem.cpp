@@ -116,7 +116,6 @@ BaseInstanceFilesystem::BaseInstanceFilesystem(
 
 void BaseInstanceFilesystem::copyMod(const QDir &modPath,
                                      const QDir &destPath) {
-    //throw std::logic_error("Not implemented");
     copyMod(modPath.filesystemPath(), destPath.filesystemPath());
 }
 void BaseInstanceFilesystem::copyMod(const fs::path &modPath,
@@ -125,31 +124,16 @@ void BaseInstanceFilesystem::copyMod(const fs::path &modPath,
 
     //TODO: probably rewrite to QDir
     fs::create_directories(destPath);
-    //try {
     for (const auto &file : fs::recursive_directory_iterator(modPath)) {
         const fs::path &source_file = file.path();
         fs::path dest_file = destPath / fs::relative(source_file, modPath);
         //try {
         fs::create_directories(dest_file.parent_path());
         fs::copy(source_file, dest_file,
-                 fs::copy_options::overwrite_existing | // probably should
-                                                        // remove overwrite
-                                                        // and handle errors
+                 fs::copy_options::overwrite_existing |
                      fs::copy_options::recursive);
         std::cerr << "filesystem.cpp: copied " << source_file << std::endl;
-        // } catch (const fs::filesystem_error &e) {
-        //     std::cerr << "filesystem.cpp: copy exception: " << e.what()
-        //               << std::endl;
-        //     return;
-        // }
     }
-    // } catch (const fs::filesystem_error &e) {
-    //     std::cerr << "filesystem.cpp: directory iterator exception: "
-    //               << e.what() << std::endl;
-    //     return;
-    // }
-    //modList.emplace_back(modName, dest_folder, true);
-    //saveState();
 }
 
 void BaseInstanceFilesystem::cleanState() {
@@ -201,7 +185,7 @@ BaseInstanceFilesystem::getModsLowerDirsString(const ModType &type) const {
     // mod_folders += '"';
     // QProcess automatically escapes with quotes if needed
     for (const auto &mod : m_modList) {
-        if (mod.type == type) mod_folders += mod.path.string() + ":";
+        if (mod.type == type && mod.enabled) mod_folders += mod.path.string() + ":";
     }
     //mod_folders += m_gamePath.path();
     return mod_folders;
