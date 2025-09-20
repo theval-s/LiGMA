@@ -48,4 +48,4 @@ In case your game also uses Proton - overlayed version of Steam's compat prefix 
   - Stardew: looks like XNA games are absolutely incompatible with overlayfs on Linux, and SMAPI is incompatible too.
 
 # Contribution
-Currently not accepting any contributions.
+Feel free to send a pull request
